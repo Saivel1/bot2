@@ -1,0 +1,840 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IV VPN Setup</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            min-height: 100vh;
+            color: #e0e0e0;
+            overflow-x: hidden;
+            position: relative;
+            background: #0a0a0a;
+        }
+
+        /* Анимированный фон с прожекторами */
+        .animated-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            overflow: hidden;
+            background: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 50%, #0a0a0a 100%);
+        }
+
+        /* Зеркальный эффект прожекторов */
+        .spotlight {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(80px);
+            opacity: 0.3;
+            animation-timing-function: ease-in-out;
+            animation-iteration-count: infinite;
+        }
+
+        .spotlight-1 {
+            width: 500px;
+            height: 500px;
+            background: radial-gradient(circle, rgba(100, 150, 200, 0.4) 0%, transparent 70%);
+            top: -150px;
+            left: -150px;
+            animation: float1 20s infinite;
+        }
+
+        .spotlight-2 {
+            width: 600px;
+            height: 600px;
+            background: radial-gradient(circle, rgba(150, 100, 200, 0.3) 0%, transparent 70%);
+            bottom: -200px;
+            right: -200px;
+            animation: float2 25s infinite;
+        }
+
+        .spotlight-3 {
+            width: 400px;
+            height: 400px;
+            background: radial-gradient(circle, rgba(120, 120, 180, 0.35) 0%, transparent 70%);
+            top: 40%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            animation: pulse 15s infinite;
+        }
+
+        /* Эффект зеркальных отражений */
+        .mirror-reflection {
+            position: absolute;
+            width: 300px;
+            height: 300px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(200, 200, 255, 0.1) 0%, transparent 60%);
+            filter: blur(40px);
+            animation: mirrorShine 10s infinite ease-in-out;
+        }
+
+        .mirror-1 {
+            top: 20%;
+            right: 10%;
+            animation-delay: 0s;
+        }
+
+        .mirror-2 {
+            bottom: 30%;
+            left: 15%;
+            animation-delay: 3s;
+        }
+
+        @keyframes mirrorShine {
+            0%, 100% {
+                opacity: 0.1;
+                transform: scale(1);
+            }
+            50% {
+                opacity: 0.3;
+                transform: scale(1.2);
+            }
+        }
+
+        @keyframes float1 {
+            0%, 100% {
+                transform: translate(0, 0) scale(1);
+            }
+            33% {
+                transform: translate(100px, 80px) scale(1.1);
+            }
+            66% {
+                transform: translate(-60px, 120px) scale(0.9);
+            }
+        }
+
+        @keyframes float2 {
+            0%, 100% {
+                transform: translate(0, 0) scale(1);
+            }
+            33% {
+                transform: translate(-120px, -60px) scale(1.15);
+            }
+            66% {
+                transform: translate(70px, -100px) scale(0.85);
+            }
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                transform: translate(-50%, -50%) scale(1);
+                opacity: 0.25;
+            }
+            50% {
+                transform: translate(-50%, -50%) scale(1.4);
+                opacity: 0.4;
+            }
+        }
+
+        /* Частицы - как блики на зеркале */
+        .particle {
+            position: absolute;
+            width: 3px;
+            height: 3px;
+            background: rgba(200, 220, 255, 0.8);
+            border-radius: 50%;
+            box-shadow: 0 0 10px rgba(200, 220, 255, 0.6);
+            animation: particleFloat linear infinite;
+        }
+
+        @keyframes particleFloat {
+            0% {
+                transform: translateY(100vh) translateX(0) scale(0);
+                opacity: 0;
+            }
+            10% {
+                opacity: 1;
+                transform: scale(1);
+            }
+            90% {
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(-100px) translateX(80px) scale(0);
+                opacity: 0;
+            }
+        }
+
+        /* Контент поверх фона */
+        .content-wrapper {
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Карточки платформ - темная стеклянная тема */
+        .platform-card {
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+            transition: all 0.3s ease;
+            cursor: pointer;
+            height: 100%;
+            background: rgba(30, 30, 35, 0.7);
+            backdrop-filter: blur(15px);
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* Зеркальный блеск при наведении */
+        .platform-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, 
+                transparent, 
+                rgba(200, 220, 255, 0.15), 
+                transparent
+            );
+            transition: left 0.6s;
+        }
+
+        .platform-card:hover::before {
+            left: 100%;
+        }
+
+        .platform-card::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            border-radius: 20px;
+            padding: 2px;
+            background: linear-gradient(135deg, 
+                rgba(100, 150, 200, 0.3), 
+                rgba(150, 100, 200, 0.3)
+            );
+            -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            -webkit-mask-composite: xor;
+            mask-composite: exclude;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .platform-card:hover::after {
+            opacity: 1;
+        }
+
+        .platform-card:hover {
+            transform: translateY(-10px) scale(1.02);
+            box-shadow: 0 15px 40px rgba(100, 150, 200, 0.3);
+            background: rgba(35, 35, 45, 0.8);
+        }
+
+        .platform-icon {
+            font-size: 3.5rem;
+            margin-bottom: 1rem;
+            filter: drop-shadow(0 0 20px rgba(200, 220, 255, 0.3));
+            transition: all 0.3s ease;
+        }
+
+        .platform-card:hover .platform-icon {
+            transform: scale(1.15) rotate(5deg);
+            filter: drop-shadow(0 0 30px rgba(200, 220, 255, 0.6));
+        }
+
+        .card-title {
+            color: #ffffff;
+            font-weight: 600;
+        }
+
+        .card-text {
+            color: #a0a0a0 !important;
+        }
+
+        /* Заголовок */
+        .main-title {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: #ffffff;
+            text-shadow: 0 0 30px rgba(200, 220, 255, 0.5);
+            margin-bottom: 0.5rem;
+            animation: fadeInDown 0.8s ease;
+            letter-spacing: 2px;
+        }
+
+        .subtitle {
+            font-size: 1.1rem;
+            color: #b0b0b0;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+            animation: fadeInUp 0.8s ease;
+        }
+
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Карточка помощи */
+        .help-card {
+            background: rgba(30, 30, 35, 0.7);
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+            animation: fadeIn 1s ease 0.5s both;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: scale(0.9);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        /* Модальные окна */
+        .modal-content {
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+            background: #1a1a1f;
+        }
+
+        .modal-header {
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            background: linear-gradient(135deg, #2a2a35 0%, #1a1a25 100%);
+            color: white;
+            border-radius: 20px 20px 0 0;
+        }
+
+        .modal-body {
+            background: #1a1a1f;
+            color: #e0e0e0;
+        }
+
+        .modal-footer {
+            background: #1a1a1f;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 0 0 20px 20px;
+        }
+
+        .step-number {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #6496c8 0%, #966cc8 100%);
+            color: white;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            margin-right: 12px;
+            flex-shrink: 0;
+            box-shadow: 0 4px 15px rgba(100, 150, 200, 0.4);
+        }
+
+        .step-content {
+            background: rgba(40, 40, 50, 0.5);
+            padding: 1rem;
+            border-radius: 12px;
+            margin-bottom: 1rem;
+            border-left: 3px solid #6496c8;
+        }
+
+        .step-content strong {
+            color: #ffffff;
+        }
+
+        /* Инпуты и кнопки */
+        .form-control {
+            background: rgba(30, 30, 35, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #e0e0e0;
+        }
+
+        .form-control:focus {
+            background: rgba(35, 35, 45, 0.9);
+            border-color: #6496c8;
+            color: #ffffff;
+            box-shadow: 0 0 0 0.2rem rgba(100, 150, 200, 0.25);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #6496c8 0%, #966cc8 100%);
+            border: none;
+            box-shadow: 0 4px 15px rgba(100, 150, 200, 0.3);
+        }
+
+        .btn-primary:hover {
+            background: linear-gradient(135deg, #7ba6d8 0%, #a67cd8 100%);
+            box-shadow: 0 6px 20px rgba(100, 150, 200, 0.5);
+            transform: translateY(-2px);
+        }
+
+        .btn-outline-primary {
+            border-color: #6496c8;
+            color: #6496c8;
+        }
+
+        .btn-outline-primary:hover {
+            background: #6496c8;
+            border-color: #6496c8;
+        }
+
+        .btn-secondary {
+            background: rgba(60, 60, 70, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(70, 70, 80, 0.9);
+        }
+
+        /* Alerts */
+        .alert-info {
+            background: rgba(100, 150, 200, 0.2);
+            border: 1px solid rgba(100, 150, 200, 0.3);
+            color: #c0d8f0;
+        }
+
+        .alert-success {
+            background: rgba(100, 200, 150, 0.2);
+            border: 1px solid rgba(100, 200, 150, 0.3);
+            color: #c0f0d8;
+        }
+
+        /* Badge для новых функций */
+        .new-badge {
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            background: linear-gradient(135deg, #ff4757 0%, #ff6b81 100%);
+            color: white;
+            font-size: 0.7rem;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-weight: bold;
+            box-shadow: 0 2px 10px rgba(255, 71, 87, 0.6);
+        }
+
+        .platform-card {
+            will-change: transform, opacity;
+            backface-visibility: hidden;
+            -webkit-backface-visibility: hidden;
+        }
+
+        /* Убираем анимацию появления карточек после загрузки */
+        .platform-card.loaded {
+            transition: transform 0.3s ease, box-shadow 0.3s ease, background 0.3s ease !important;
+        }
+
+        /* Предотвращаем мерцание при открытии модала */
+        .modal.fade .modal-dialog {
+            transition: transform 0.3s ease-out;
+        }
+
+        .modal-backdrop {
+            transition: opacity 0.15s linear;
+        }
+
+        /* Фикс мерцания при открытии модала */
+        body.modal-open .platform-card {
+            transform: none !important;
+            transition: none !important;
+        }
+
+        /* Блокируем переходы на карточках при открытии модала */
+        .platform-card * {
+            transition: none !important;
+        }
+
+        .platform-card:hover * {
+            transition: transform 0.3s ease, filter 0.3s ease !important;
+        }
+
+        /* Адаптив */
+        @media (max-width: 576px) {
+            .main-title {
+                font-size: 2rem;
+            }
+            .platform-icon {
+                font-size: 2.8rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Анимированный фон -->
+    <div class="animated-bg">
+        <div class="spotlight spotlight-1"></div>
+        <div class="spotlight spotlight-2"></div>
+        <div class="spotlight spotlight-3"></div>
+        <div class="mirror-reflection mirror-1"></div>
+        <div class="mirror-reflection mirror-2"></div>
+    </div>
+
+    <!-- Контент -->
+    <div class="content-wrapper">
+        <div class="container py-4">
+            <h1 class="text-center main-title">🪞 IV VPN</h1>
+            <p class="text-center subtitle mb-5">Выберите вашу платформу</p>
+
+            <!-- Карточки платформ -->
+            <div class="row g-4 mb-4">
+                <!-- iOS -->
+                <div class="col-6 col-md-3">
+                    <div class="platform-card" data-bs-toggle="modal" data-bs-target="#iosModal">
+                        <div class="card-body text-center p-4">
+                            <div class="platform-icon">📱</div>
+                            <h5 class="card-title mb-1">iOS</h5>
+                            <p class="card-text small">iPhone / iPad</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Android -->
+                <div class="col-6 col-md-3">
+                    <div class="platform-card" data-bs-toggle="modal" data-bs-target="#androidModal">
+                        <div class="card-body text-center p-4">
+                            <div class="platform-icon">🤖</div>
+                            <h5 class="card-title mb-1">Android</h5>
+                            <p class="card-text small">Смартфоны</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Windows -->
+                <div class="col-6 col-md-3">
+                    <div class="platform-card" data-bs-toggle="modal" data-bs-target="#windowsModal">
+                        <div class="card-body text-center p-4">
+                            <div class="platform-icon">💻</div>
+                            <h5 class="card-title mb-1">Windows</h5>
+                            <p class="card-text small">ПК</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- MacOS -->
+                <div class="col-6 col-md-3">
+                    <div class="platform-card" data-bs-toggle="modal" data-bs-target="#macModal">
+                        <div class="card-body text-center p-4">
+                            <div class="platform-icon">🍎</div>
+                            <h5 class="card-title mb-1">MacOS</h5>
+                            <p class="card-text small">Mac</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Карточка помощи -->
+            <div class="card help-card">
+                <div class="card-body text-center p-4">
+                    <i class="bi bi-question-circle-fill" style="font-size: 3rem; color: #6496c8;"></i>
+                    <h5 class="mt-3 mb-2" style="color: #ffffff;">Нужна помощь?</h5>
+                    <p class="text-secondary small mb-3">Мы всегда на связи и готовы помочь!</p>
+                    <a href="https://t.me/ivvpnhelp" class="btn btn-primary px-4">
+                        <i class="bi bi-telegram"></i> Написать в поддержку
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- iOS Modal -->
+    <div class="modal fade" id="iosModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-scrollable modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">📱 Установка на iOS</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div class="step-content">
+                        <div class="d-flex align-items-start">
+                            <span class="step-number">1</span>
+                            <div>
+                                <strong class="d-block mb-2">Установите v2RayTun</strong>
+                                <p class="small text-secondary mb-2">Скачайте приложение из App Store</p>
+                                <a href="https://apps.apple.com/ru/app/v2raytun/id6476628951" class="btn btn-sm btn-primary" target="_blank">
+                                    <i class="bi bi-apple"></i> Открыть App Store
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="step-content">
+                        <div class="d-flex align-items-start">
+                            <span class="step-number">2</span>
+                            <div class="flex-grow-1">
+                                <strong class="d-block mb-2">Добавьте конфигурацию</strong>
+                                <p class="small text-secondary mb-2">Скопируйте ссылку и вставьте в v2RayTun (Импорт из буфера обмена)</p>
+                                <div class="input-group input-group-sm">
+                                    <input type="text" class="form-control" id="iosConfigLink" value="https://config-link-here" readonly>
+                                    <button class="btn btn-outline-primary" onclick="copyLink('iosConfigLink')">
+                                        <i class="bi bi-clipboard"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="step-content">
+                        <div class="d-flex align-items-start">
+                            <span class="step-number">3</span>
+                            <div>
+                                <strong class="d-block mb-2">Подключитесь</strong>
+                                <p class="small text-secondary mb-0">Включите VPN переключателем в приложении и выберите оптимальный сервер</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="alert alert-info mt-3" role="alert">
+                        <i class="bi bi-info-circle-fill"></i> <strong>Совет:</strong> Выбирайте сервер с наименьшим пингом для лучшей скорости, для этого нажмите три точки "Проверка доступности конфигов"
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Android Modal -->
+    <div class="modal fade" id="androidModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-scrollable modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">🤖 Установка на Android</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div class="step-content">
+                        <div class="d-flex align-items-start">
+                            <span class="step-number">1</span>
+                            <div>
+                                <strong class="d-block mb-2">Установите v2rayNG</strong>
+                                <p class="small text-secondary mb-2">Бесплатное приложение из GitHub</p>
+                                <a href="https://github.com/2dust/v2rayNG/releases/download/1.10.26/v2rayNG_1.10.26_universal.apk" class="btn btn-sm btn-primary" target="_blank">
+                                    <i class="bi bi-github"></i> <i class="bi bi-download"></i>  GitHub
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="step-content">
+                        <div class="d-flex align-items-start">
+                            <span class="step-number">2</span>
+                            <div class="flex-grow-1">
+                                <strong class="d-block mb-2">Импортируйте конфигурацию</strong>
+                                <p class="small text-secondary mb-2">+ → Иморт из буфера обмена</p>
+                                <div class="input-group input-group-sm">
+                                    <input type="text" class="form-control" id="androidConfigLink" value="https://config-link-here" readonly>
+                                    <button class="btn btn-outline-primary" onclick="copyLink('androidConfigLink')">
+                                        <i class="bi bi-clipboard"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="step-content">
+                        <div class="d-flex align-items-start">
+                            <span class="step-number">3</span>
+                            <div>
+                                <strong class="d-block mb-2">Подключитесь</strong>
+                                <p class="small text-secondary mb-0">Выберите сервер и нажмите на кнопку подключения (значок треугольник в круге)</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="alert alert-success mt-3" role="alert">
+                        <i class="bi bi-check-circle-fill"></i> <strong>Готово!</strong> VPN подключен, когда вверху появится ключик 🔑
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Windows Modal -->
+    <div class="modal fade" id="windowsModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-scrollable modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">💻 Установка на Windows</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div class="step-content">
+                        <div class="d-flex align-items-start">
+                            <span class="step-number">1</span>
+                            <div>
+                                <strong class="d-block mb-2">Скачайте NekoRay</strong>
+                                <p class="small text-secondary mb-2">Бесплатный клиент для Windows</p>
+                                <a href="https://github.com/MatsuriDayo/nekoray/releases/download/4.0.1/nekoray-4.0.1-2024-12-12-windows64.zip" class="btn btn-sm btn-primary" target="_blank">
+                                    <i class="bi bi-github"></i> <i class="bi bi-download"></i>  GitHub
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="step-content">
+                        <div class="d-flex align-items-start">
+                            <span class="step-number">2</span>
+                            <div class="flex-grow-1">
+                                <strong class="d-block mb-2">Добавьте подписку</strong>
+                                <p class="small text-secondary mb-2">Правой кнопкой мыши посередине → Импоритровать из буфера обмена → ОК</p>
+                                <div class="input-group input-group-sm">
+                                    <input type="text" class="form-control" id="windowsConfigLink" value="https://config-link-here" readonly>
+                                    <button class="btn btn-outline-primary" onclick="copyLink('windowsConfigLink')">
+                                        <i class="bi bi-clipboard"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="step-content">
+                        <div class="d-flex align-items-start">
+                            <span class="step-number">3</span>
+                            <div>
+                                <strong class="d-block mb-2">Активируйте</strong>
+                                <p class="small text-secondary mb-0">Включите "Системный прокси" или "Режим TU"→ режим "Автоматический"</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MacOS Modal -->
+    <div class="modal fade" id="macModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-scrollable modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">🍎 Установка на MacOS</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div class="step-content">
+                        <div class="d-flex align-items-start">
+                            <span class="step-number">1</span>
+                            <div>
+                                <strong class="d-block mb-2">Установите v2RayTun</strong>
+                                <p class="small text-secondary mb-2">Скачайте приложение из App Store</p>
+                                <a href="https://apps.apple.com/ru/app/v2raytun/id6476628951" class="btn btn-sm btn-primary" target="_blank">
+                                    <i class="bi bi-apple"></i> Открыть App Store
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="step-content">
+                        <div class="d-flex align-items-start">
+                            <span class="step-number">2</span>
+                            <div class="flex-grow-1">
+                                <strong class="d-block mb-2">Добавьте конфигурацию</strong>
+                                <p class="small text-secondary mb-2">Скопируйте ссылку и вставьте в v2RayTun (Импорт из буфера обмена)</p>
+                                <div class="input-group input-group-sm">
+                                    <input type="text" class="form-control" id="macConfigLink" value="https://config-link-here" readonly>
+                                    <button class="btn btn-outline-primary" onclick="copyLink('macConfigLink')">
+                                        <i class="bi bi-clipboard"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="step-content">
+                        <div class="d-flex align-items-start">
+                            <span class="step-number">3</span>
+                            <div>
+                                <strong class="d-block mb-2">Подключитесь</strong>
+                                <p class="small text-secondary mb-0">Включите VPN в меню приложения</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Инициализация Telegram WebApp
+        let tg = window.Telegram.WebApp;
+        tg.expand();
+        tg.ready();
+
+        // Функция копирования
+        function copyLink(id) {
+            const input = document.getElementById(id);
+            input.select();
+            input.setSelectionRange(0, 99999);
+            
+            try {
+                document.execCommand('copy');
+                tg.showPopup({
+                    title: '✅ Готово!',
+                    message: 'Ссылка скопирована в буфер обмена',
+                    buttons: [{type: 'ok'}]
+                });
+            } catch (err) {
+                tg.showAlert('Ошибка копирования. Скопируйте вручную.');
+            }
+        }
+
+        // Загрузка данных пользователя
+        const userData = {{ user_data | tojson }};
+        
+        if (userData && userData.subscription_link) {
+            const link = userData.subscription_link;
+            ['iosConfigLink', 'androidConfigLink', 'windowsConfigLink', 'macConfigLink'].forEach(id => {
+                const element = document.getElementById(id);
+                if (element) {
+                    element.value = link;
+                }
+            });
+        }
+    </script>
+</body>
+</html>
