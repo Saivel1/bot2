@@ -17,7 +17,7 @@ if __name__ == "__main__":
         target="app.main:app",
         address="127.0.0.1",
         port=8000,
-        workers=2,
+        workers=1,
         loop=Loops.uvloop,
         log_enabled=True,
         interface=Interfaces.ASGI,
