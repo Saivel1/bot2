@@ -78,12 +78,12 @@ async def webhook(request: Request) -> dict:
 @post("/marzban")
 async def webhook_marz(request: Request) -> dict:
     data = await request.json()
-    pan = data[0]["subscription_url"]
+    pan = data[0]["user"]["subscription_url"]
     if pan.find("dns1") != -1:
         backend = MarzbanClientDns(settings.DNS2_URL)
     else:
         backend = MarzbanClientDns(settings.DNS1_URL)
-        
+
     username = data[0]['username']
     inbounds = data[0]['user']['inbounds']['vless']
     id = data[0]['user']['proxies']['vless']['id']
