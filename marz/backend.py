@@ -143,7 +143,7 @@ class MarzbanClient:
                 },
                 "inbounds": {
                     "vless": [
-                        "VLESS TCP REALITY",
+                        "VLESS TCP VISION REALITY",
                     ]
                 }
             }
