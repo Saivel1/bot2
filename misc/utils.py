@@ -144,9 +144,10 @@ async def create_user(user_id, username: str | None = None):
             data["username"] = username
 
         res = await user_repo.create(data)
-        return res
     
     await modify_user(username=user_id)
+    return res
+
 
 
 async def get_sub_url(user_id):
