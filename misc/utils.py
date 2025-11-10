@@ -78,7 +78,7 @@ async def modify_user(username):
         logger.info(f'Зареган {user}')
     
     link = await get_user_in_links(user_id=username)
-    logger.info(link)
+    logger.info(f"Это ссылка {link}")
     if not link:
         async with async_session() as session:
             repo = BaseRepository(session=session, model=LinksOrm)
@@ -88,12 +88,12 @@ async def modify_user(username):
                 "uuid": user_uuid,
             }
             sub_url = user['subscription_url'] #type: ignore
-            logger.info(data_panel)
+            logger.info(f"DATA PANEL: {data_panel}")
             if sub_url.find("world") != -1:
                 data_panel["panel_1"] = sub_url
             else:
                 data_panel["panel_2"] = sub_url
-            logger.info(data_panel)
+            logger.info(f"DATA PANEL AFTER: {data_panel}")
             res = await repo.create(data_panel)
             logger.info(res)
 
