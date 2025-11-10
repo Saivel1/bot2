@@ -19,9 +19,7 @@ from litestar.status_codes import HTTP_302_FOUND
 # # Импортируем handlers для регистрации
 import handlers.start
 import handlers.instructions
-import handlers.paymenu
 import handlers.subsmenu
-import handlers.trial
 
 
 # app/main.py
@@ -83,55 +81,6 @@ async def webhook_marz(request: Request) -> dict:
     return {"ok": True}
 
 
-# Yookassa payment webhook
-@post("/pay")
-async def yoo_kassa(request: Request) -> dict:
-    data = await request.json()
-    event = data.get('event')
-    order_id = data.get('object', {}).get("id", {})
-
-    if order_id == {}:
-        logger.warning(f'{order_id} Response: {data}')
-        return {"status": "ne-ok"}
-    
-    obj = await change_status(order_id=order_id, status=event)
-    if not obj:
-        logger.info(f"Order: {order_id} was canceled or TimeOut")
-        return {"response": "Order was canceled"}
-    
-    obj_data = data.get("object", {})
-    pay_id, pay_am = obj_data.get('id'), obj_data.get('amount')
-
-    logger.info(f'{pay_id} | {pay_am}')
-    user_marz = await marzban_client.get_user(user_id=obj.user_id)
-
-    user = await get_user(user_id=obj.user_id)
-    expire = calculate_expire(old_expire=user_marz['expire']) #type: ignore
-    new_expire = new_date(expire=expire, amount=pay_am['value'])
-
-    try:
-        await modify_user(username=obj.user_id, expire=new_expire)
-        logger.info(f"Для пользователя {obj.user_id} оплата и обработка прошли успешно.")
-
-        await bot.send_message(
-            chat_id=obj.user_id, #type: ignore
-            text=f"Оплата прошла успешно на сумму: {obj.amount}", #type: ignore
-            reply_markup=BackButton.back_start()
-        )
-
-        await bot.send_message(
-            chat_id=482410857,
-            text=f"Пользователь {obj.user_id} заплатил {obj.amount}"
-        )
-    except Exception as e:
-        logger.warning(e)
-        await bot.send_message(
-            text="Возникла ошибка, напиши в поддержку /help",
-            chat_id=obj.user_id
-        )
-
-    return {"ok": True}
-
 
 # Subscription redirect
 @get("/sub/{uuid:str}")
@@ -189,7 +138,6 @@ app = Litestar(
         health,
         webhook,
         webhook_marz,
-        yoo_kassa,
         process_sub,
     ],
     lifespan=[lifespan],

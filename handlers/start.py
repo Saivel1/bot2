@@ -27,21 +27,15 @@ async def cmd_start(message: types.Message):
         await create_user(user_id=user_id, username=message.from_user.username) #type: ignore
         await message.answer(
             WELCOME_TEXT,
-            reply_markup=MainKeyboard.main_keyboard_with_trial(),
+            reply_markup=MainKeyboard.main_keyboard(),
             parse_mode="HTML"
         ) 
-    elif user.trial_used == False:    
-        await message.answer(
-            WELCOME_TEXT,
-            reply_markup=MainKeyboard.main_keyboard_with_trial(),
-            parse_mode="HTML"
-        )
-    else:
+    else:    
         await message.answer(
             WELCOME_TEXT,
             reply_markup=MainKeyboard.main_keyboard(),
             parse_mode="HTML"
-        ) 
+        )
 
 @dp.callback_query(F.data == "start_menu")
 async def call_start(callback: CallbackQuery):
@@ -54,18 +48,13 @@ async def call_start(callback: CallbackQuery):
             text=ERROR_TEXT,
             parse_mode="HTML"
         )# type: ignore
-    elif user.trial_used == False:    
-        await callback.message.edit_text( #type: ignore
-            WELCOME_TEXT,
-            reply_markup=MainKeyboard.main_keyboard_with_trial(),
-            parse_mode="HTML"
-        )
-    else:
+    else:    
         await callback.message.edit_text( #type: ignore
             WELCOME_TEXT,
             reply_markup=MainKeyboard.main_keyboard(),
             parse_mode="HTML"
         )
+
 
 @dp.message(Command("id"))
 async def cmd_id(message: types.Message):

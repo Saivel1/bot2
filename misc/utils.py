@@ -68,9 +68,7 @@ async def get_links_of_panels(uuid: str) -> list | None:
         return [res.panel_1, res.panel_2]
     
 
-async def modify_user(username, expire: datetime):
-    data = datetime.timestamp(expire)
-    data = int(data)
+async def modify_user(username):
     username = str(username)
 
     user = await marzban_client.get_user(user_id=username)
@@ -98,14 +96,14 @@ async def modify_user(username, expire: datetime):
             logger.info(res)
 
         await marzban_client.modify_user(
-            user_id=username, 
-            expire=data
+            user_id=username,
+            expire=0
         )
     
     async with async_session() as session:
         repo = BaseRepository(session=session, model=UserOrm)
         await repo.update_one({
-            "subscription_end": expire
+            "subscription_end": 0
         }, user_id=username)
 
     return True
@@ -132,6 +130,7 @@ def calculate_expire(old_expire):
     
     return new_expire
 
+
 async def create_user(user_id, username: str | None = None):
     user_id = str(user_id)
     async with async_session() as session:
@@ -145,6 +144,9 @@ async def create_user(user_id, username: str | None = None):
         res = await user_repo.create(data)
         return res
     
+    await modify_user(username=user_id)
+
+
 async def get_sub_url(user_id):
     user_id = str(user_id)
     async with async_session() as session:

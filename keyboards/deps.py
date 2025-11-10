@@ -13,13 +13,7 @@ class BackButton:
                 ]
         )
 
-    @staticmethod
-    def back_pays():
-        return InlineKeyboardMarkup(
-            inline_keyboard=[
-                [InlineKeyboardButton(text="⬅️ Назад", callback_data="pay_menu")]
-                ]
-        )
+
     @staticmethod
     def back_start():
         return InlineKeyboardMarkup(
