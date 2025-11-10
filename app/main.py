@@ -43,9 +43,9 @@ async def lifespan(app: Litestar):
         drop_pending_updates=False
     )
     print(f"Webhook установлен: {settings.WEBHOOK_URL}")
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.drop_all)
-        await conn.run_sync(Base.metadata.create_all)
+    # async with engine.begin() as conn:
+    #     await conn.run_sync(Base.metadata.drop_all)
+    #     await conn.run_sync(Base.metadata.create_all)
 
     yield
 
