@@ -49,8 +49,8 @@ async def lifespan(app: Litestar):
     
     yield
     
-    await bot.delete_webhook()
     await bot.session.close()
+    await bot.delete_webhook()
     print("Бот остановлен")
 
 
