@@ -147,7 +147,7 @@ class MarzbanClient:
             }
             
             async with session.post(
-                url=f"{self.base_url}/api/user/",
+                url=f"{self.base_url}/api/user",
                 headers=self.headers,
                 json=data
             ) as response:
