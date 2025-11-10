@@ -73,7 +73,7 @@ async def modify_user(username):
 
     user = await marzban_client.get_user(user_id=username)
     logger.info(user)
-    if not user:
+    if user is None:
         user = await marzban_client.create_user(username=username)
         logger.info(f'Зареган {user}')
     
