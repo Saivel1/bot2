@@ -48,7 +48,7 @@ async def lifespan(app: Litestar):
         await conn.run_sync(Base.metadata.create_all)
     
     yield
-    
+
     await bot.session.close()
     await bot.delete_webhook()
     print("Бот остановлен")
@@ -89,6 +89,7 @@ async def process_sub(uuid: str) -> Redirect:
     """Проверяем все панели параллельно"""
     
     links = await get_links_of_panels(uuid=uuid)
+    logger.info(f'Ссылки {links}')
     
     if not links:
         raise NotFoundException(detail="Subscription not found")

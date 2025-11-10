@@ -63,6 +63,8 @@ async def get_links_of_panels(uuid: str) -> list | None:
     async with async_session() as session:
         user_repo = BaseRepository(session=session, model=LinksOrm)
         res = await user_repo.get_one(uuid=uuid)
+        logger.info(res)
+
         if res is None:
             return None
         return [res.panel_1, res.panel_2]
