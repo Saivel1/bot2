@@ -11,11 +11,6 @@ from misc.utils import modify_user, calculate_expire, get_user, new_date, get_li
 import aiohttp, asyncio
 from marz.backend import marzban_client
 from litestar import get, post, Litestar
-from litestar.contrib.jinja import JinjaTemplateEngine
-from litestar.datastructures import State
-from litestar.response import Template
-from pathlib import Path
-from litestar.template.config import TemplateConfig
 from litestar.response import Redirect
 from litestar.exceptions import NotFoundException, ServiceUnavailableException
 from litestar.status_codes import HTTP_302_FOUND
@@ -33,7 +28,6 @@ import handlers.trial
 from litestar import Litestar, post, get, Request
 from litestar.response import Redirect
 from litestar.exceptions import NotFoundException, ServiceUnavailableException
-from litestar.datastructures import State
 from contextlib import asynccontextmanager
 
 import asyncio
@@ -50,6 +44,9 @@ async def lifespan(app: Litestar):
         drop_pending_updates=False
     )
     print(f"Webhook установлен: {settings.WEBHOOK_URL}")
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.drop_all)
+        await conn.run_sync(Base.metadata.create_all)
     
     yield
     
