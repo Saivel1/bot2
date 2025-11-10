@@ -10,18 +10,17 @@ MARZ_DATA = (s.M_DIGITAL_U, s.M_DIGITAL_P, s.M_DIGITAL_URL)
 
 
 class MarzbanClient:
-    """Улучшенная версия BackendContext с singleton и кешированием токена"""
+    """Клиент с синглтоном ПО URL"""
     
-    _instance = None
-    _token = None
-    _token_expires_at = None
-    _session = None
+    _instances = {}  # Словарь: {url: instance}
     
-    def __new__(cls, url):
-        if cls._instance is None:
-            cls._instance = super().__new__(cls)
-            cls._instance._initialized = False
-        return cls._instance
+    def __new__(cls, url: str):
+        # Создаём отдельный инстанс для каждого URL
+        if url not in cls._instances:
+            instance = super().__new__(cls)
+            instance._initialized = False
+            cls._instances[url] = instance
+        return cls._instances[url]
     
     def __init__(self, url: str):
         if self._initialized:
@@ -29,10 +28,13 @@ class MarzbanClient:
         
         self.user = s.M_DIGITAL_U
         self.password = s.M_DIGITAL_P
-        self.base_url = url  # http://localhost/proxy
+        self.base_url = url
         self.headers = {"accept": "application/json"}
+        self._token = None
+        self._token_expires_at = None
+        self._session = None
         self._initialized = True
-        logger.info(f"MarzbanClient инициализирован: {self.base_url}")
+        logger.info(f"MarzbanClient создан для: {self.base_url}")
     
     async def _get_session(self) -> aiohttp.ClientSession:
         """Получить или создать сессию"""
