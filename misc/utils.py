@@ -101,12 +101,6 @@ async def modify_user(username):
             user_id=username,
             expire=0
         )
-    
-    async with async_session() as session:
-        repo = BaseRepository(session=session, model=UserOrm)
-        await repo.update_one({
-            "subscription_end": 0
-        }, user_id=username)
 
     return True
 
