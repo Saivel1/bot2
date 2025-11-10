@@ -54,12 +54,13 @@ class MarzbanClient:
                 "username": self.user,
                 "password": self.password
             }
-            
+            url = f"{self.base_url}/api/admin/token"
+            logger.info(f'Это url {url}')
+
             async with session.post(
-                url=f"{self.base_url}/api/admin/token",
+                url=url,
                 data=data
             ) as response:
-                
                 if response.status == 200:
                     json_data = await response.json()
                     self._token = json_data.get("access_token")
