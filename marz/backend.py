@@ -245,24 +245,16 @@ class MarzbanClient:
 
 
 class MarzbanClientDns(MarzbanClient):
-    _instance = None
-    
-    def __new__(cls, url):
-        if cls._instance is None:
-            cls._instance = super().__new__(cls)
-            cls._instance._initialized = False
-        return cls._instance
-    
-    def __init__(self, url):
-        if self._initialized:
-            return
-        
+    def __init__(self, url: str):
+        super().__init__()
+        # Установить всё вручную
         self.user = s.M_DIGITAL_U
         self.password = s.M_DIGITAL_P
         self.base_url = url
         self.headers = {"accept": "application/json"}
-        self._initialized = True
-        logger.info(f"MarzbanClient инициализирован: {self.base_url}")
+        self.token = None
+        self.token_expiry = None
+        logger.info(f"MarzbanClientDns: {self.base_url}")
 
 
 # Singleton instance
