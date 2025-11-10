@@ -13,6 +13,9 @@ class Settings(BaseSettings):
     M_DIGITAL_URL: str
     M_DIGITAL_U: str
     M_DIGITAL_P: str
+    DNS1_URL: str
+    DNS2_URL: str
+
 
     #Anymessage
     ANY_TOKEN: str

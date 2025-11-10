@@ -167,6 +167,53 @@ class MarzbanClient:
             logger.error(f"Исключение при создании пользователя {username}: {e}")
             return None
     
+    async def create_user_options(self, username: str, id: str | None = None, inbounds: list | None = None) -> Optional[Dict[str, Any]]:
+        """Создать нового пользователя"""
+        try:
+            await self._ensure_token()
+            session = await self._get_session()
+            
+            username = str(username)
+
+            data = {
+                "username": username,
+                "proxies": {
+                    "vless": {
+                        "flow": "xtls-rprx-vision"
+                    }
+                },
+                "inbounds": {
+                    "vless": []
+                }
+            }
+
+            if id:
+                data["proxies"]['vless']['id'] = id
+            
+            if inbounds:
+                data["inbounds"]['vless'].extend(inbounds)
+            
+            async with session.post(
+                url=f"{self.base_url}/api/user",
+                headers=self.headers,
+                json=data
+            ) as response:
+                logger.info(self.headers)
+                logger.info(data)
+                logger.info(f"{self.base_url}/api/user")
+                if response.status in (200, 201):
+                    json_data = await response.json()
+                    logger.info(f"Пользователь {username} создан: {json_data}")
+                    return json_data
+                else:
+                    error_text = await response.text()
+                    logger.warning(f"Ошибка в создании пользователя: {response.status}, {error_text}")
+                    return None
+                    
+        except Exception as e:
+            logger.error(f"Исключение при создании пользователя {username}: {e}")
+            return None
+
     async def delete_user(self, username: str) -> bool:
         """Удалить пользователя"""
         try:
@@ -195,6 +242,27 @@ class MarzbanClient:
             await self._session.close()
             await asyncio.sleep(0.1)
             logger.info("Сессия MarzbanClient закрыта")
+
+
+class MarzbanClientDns(MarzbanClient):
+    _instance = None
+    
+    def __new__(cls, url):
+        if cls._instance is None:
+            cls._instance = super().__new__(cls)
+            cls._instance._initialized = False
+        return cls._instance
+    
+    def __init__(self, url):
+        if self._initialized:
+            return
+        
+        self.user = s.M_DIGITAL_U
+        self.password = s.M_DIGITAL_P
+        self.base_url = url
+        self.headers = {"accept": "application/json"}
+        self._initialized = True
+        logger.info(f"MarzbanClient инициализирован: {self.base_url}")
 
 
 # Singleton instance
