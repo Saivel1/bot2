@@ -138,13 +138,11 @@ class MarzbanClient:
                 "username": username,
                 "proxies": {
                     "vless": {
-                        "flow": "xtls-rprx-vision"
+                        #"flow": "xtls-rprx-vision"
                     }
                 },
                 "inbounds": {
-                    "vless": [
-                        "VLESS TCP VISION REALITY",
-                    ]
+                    "vless": ["VLESS TCP"]
                 }
             }
             
