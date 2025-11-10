@@ -9,7 +9,7 @@ from repositories.base import BaseRepository
 from keyboards.deps import BackButton
 from misc.utils import modify_user, calculate_expire, get_user, new_date, get_links_of_panels
 import aiohttp, asyncio
-from marz.backend import MarzbanClientDns
+from marz.backend import MarzbanClient
 from litestar import get, post, Litestar
 from litestar.response import Redirect
 from litestar.exceptions import NotFoundException, ServiceUnavailableException
@@ -80,9 +80,9 @@ async def webhook_marz(request: Request) -> dict:
     data = await request.json()
     pan = data[0]["user"]["subscription_url"]
     if pan.find("dns1") != -1:
-        backend = MarzbanClientDns(settings.DNS2_URL)
+        backend = MarzbanClient(settings.DNS2_URL)
     else:
-        backend = MarzbanClientDns(settings.DNS1_URL)
+        backend = MarzbanClient(settings.DNS1_URL)
 
     username = data[0]['username']
     inbounds = data[0]['user']['inbounds']['vless']
