@@ -37,6 +37,7 @@ from aiogram import types
 @asynccontextmanager
 async def lifespan(app: Litestar):
     """Lifecycle events для установки/удаления webhook"""
+    await bot.delete_webhook()
     await bot.set_webhook(
         url=settings.WEBHOOK_URL,
         drop_pending_updates=False
