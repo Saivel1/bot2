@@ -86,7 +86,7 @@ class MarzbanClient:
                 url=f"{self.base_url}/api/user/{user_id}",
                 headers=self.headers
             ) as response:
-                
+                logger.info(await response.json())
                 if response.status in (200, 201):
                     json_data = await response.json()
                     logger.info(f"Пользователь {user_id} получен")
