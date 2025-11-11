@@ -210,7 +210,7 @@ app = Litestar(
     static_files_config=[
         StaticFilesConfig(
             path="/vpn-guide/static",
-            directories=[BASE_DIR / Path("templates" / Path("static"))],  # Папка, где лежит favicon.ico
+            directories=[BASE_DIR / "templates" / "static"],  # Папка, где лежит favicon.ico
         )
     ],
     template_config=templates
