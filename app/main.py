@@ -4,7 +4,7 @@ from config_data.config import settings
 from contextlib import asynccontextmanager
 from logger_setup import logger
 from db.database import engine, async_session
-from db.db_models import Base, PaymentData
+from db.db_models import Base, PaymentData, LinksOrm
 from repositories.base import BaseRepository
 from keyboards.deps import BackButton
 from misc.utils import modify_user, calculate_expire, get_user, new_date, get_links_of_panels
@@ -18,6 +18,7 @@ from litestar.contrib.jinja import JinjaTemplateEngine
 from litestar.template.config import TemplateConfig
 from pathlib import Path
 from litestar.response import Template
+from litestar.static_files import StaticFilesConfig
 
 
 # # Импортируем handlers для регистрации
@@ -104,10 +105,11 @@ async def webhook(request: Request) -> dict:
 async def webhook_marz(request: Request) -> dict:
     data = await request.json()
     pan = data[0]["user"]["subscription_url"]
-    logger.info(pan)
-    logger.info(pan.find("dns1"))
-    if pan.find("dns1") != -1:
+    pan1 = False
+
+    if pan.find("dns1") != -1: # Если в панели есть dns1 - значит это первая панель
         backend = MarzbanClient(settings.DNS2_URL)
+        pan1 = True
     else:
         backend = MarzbanClient(settings.DNS1_URL)
 
@@ -119,9 +121,23 @@ async def webhook_marz(request: Request) -> dict:
     logger.info(f'username --- {username} --- inbounds {inbounds} --- id {id}')
     try:
         res = await backend.create_user_options(username=username, id=id, inbounds=inbounds, expire=expire)
+        if res is None:
+             return {"error": 'При создании пользоваетеля возникла ошибка'}
+        logger.info(res["username"]) 
+        async with async_session() as session:
+            repo = BaseRepository(session=session, model=LinksOrm)
+            new_link = dict()
+            if pan1:
+                new_link['panel_2'] = res["subscription_url"]
+            else:
+                new_link['panel_1'] = res["subscription_url"]
+
+            await repo.update_one(
+                new_link, 
+                username=username)
+
     except:
         pass
-    logger.info(res)
     return {"ok": True}
 
 
@@ -187,5 +203,12 @@ app = Litestar(
         vpn_guide
     ],
     lifespan=[lifespan],
-    debug=True
+    debug=True,
+    static_files_config=[
+        StaticFilesConfig(
+            path="/favicon.ico",
+            directories=[Path("templates/static")],  # Папка, где лежит favicon.ico
+            name="favicon",
+        )
+    ],
 )
