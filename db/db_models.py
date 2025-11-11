@@ -49,4 +49,4 @@ class PanelQueue(Base):
     panel: Mapped[str]
     username: Mapped[str]
     expire: Mapped[int]
-    inbounds: Mapped[types.ARRAY]
+    inbounds: Mapped[list] = mapped_column(types.ARRAY)
