@@ -169,7 +169,7 @@ class MarzbanClient:
             logger.error(f"Исключение при создании пользователя {username}: {e}")
             return None
     
-    async def create_user_options(self, username: str, id: str | None = None, inbounds: list | None = None) -> Optional[Dict[str, Any]]:
+    async def create_user_options(self, username: str, id: str | None = None, inbounds: list | None = None, expire: int | None = None) -> Optional[Dict[str, Any]]:
         """Создать нового пользователя"""
         try:
             await self._ensure_token()
@@ -194,6 +194,9 @@ class MarzbanClient:
             
             if inbounds:
                 data["inbounds"]['vless'].extend(inbounds)
+            
+            if expire:
+                data['expire'] = expire
             
             async with session.post(
                 url=f"{self.base_url}/api/user",

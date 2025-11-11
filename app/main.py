@@ -14,6 +14,10 @@ from litestar import get, post, Litestar
 from litestar.response import Redirect
 from litestar.exceptions import NotFoundException, ServiceUnavailableException
 from litestar.status_codes import HTTP_302_FOUND
+from litestar.contrib.jinja import JinjaTemplateEngine
+from litestar.template.config import TemplateConfig
+from pathlib import Path
+from litestar.response import Template
 
 
 # # Импортируем handlers для регистрации
@@ -64,6 +68,27 @@ async def root() -> dict:
 async def health() -> dict:
     return {"status": "ok"}
 
+templates = TemplateConfig(
+    directory=Path("templates"),
+    engine=JinjaTemplateEngine,
+)
+
+# Route handler
+@get("/vpn-guide/{user_id:str}")
+async def vpn_guide(user_id: str) -> Template:
+    user_data = {
+        "subscription_link": f"{settings.IN_SUB_LINK}{user_id}",
+        "user_id": user_id
+    }
+
+    return Template(
+        template_name="guide.html",
+        context={
+            "user_data": user_data,
+            "title": "VPN Setup Guide"
+        }
+    )
+
 
 # Telegram webhook
 @post("/webhook")
@@ -89,9 +114,13 @@ async def webhook_marz(request: Request) -> dict:
     username = data[0]['username']
     inbounds = data[0]['user']['inbounds']['vless']
     id = data[0]['user']['proxies']['vless']['id']
+    expire = data[0]['user']['expire']
 
     logger.info(f'username --- {username} --- inbounds {inbounds} --- id {id}')
-    res = await backend.create_user_options(username=username, id=id, inbounds=inbounds)
+    try:
+        res = await backend.create_user_options(username=username, id=id, inbounds=inbounds, expire=expire)
+    except:
+        pass
     logger.info(res)
     return {"ok": True}
 
@@ -155,6 +184,7 @@ app = Litestar(
         webhook,
         webhook_marz,
         process_sub,
+        vpn_guide
     ],
     lifespan=[lifespan],
     debug=True

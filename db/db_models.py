@@ -40,3 +40,12 @@ class LinksOrm(Base):
     uuid: Mapped[str]
     panel_1: Mapped[str | None]
     panel_2: Mapped[str | None]
+
+class PanelQueue(Base):
+    __tablename__ = 'add_to_panel_queue'
+
+    uuid: Mapped[str] = mapped_column(primary_key=True)
+    panel: Mapped[str]
+    username: Mapped[str]
+    expire: Mapped[int]
+    inbounds: Mapped[list]
