@@ -19,7 +19,7 @@ class Instruction:
         return InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton(
             text="📱 Инструкция по установке",
-            web_app=WebAppInfo(url=f"https://9a453bca4387626f.ivvpn.world/vpn-guide/{uuid}")
+            web_app=WebAppInfo(url=f"https://9a453bca4387626f.docs-sharing.world/vpn-guide/{uuid}")
         )],
         [InlineKeyboardButton(text="⬅️ Назад", callback_data="start_menu")]
     ])

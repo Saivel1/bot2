@@ -37,6 +37,8 @@ import asyncio
 import aiohttp
 from aiogram import types
 
+BASE_DIR = Path(__file__).parent
+
 
 # Lifespan для управления webhook
 @asynccontextmanager
@@ -70,7 +72,7 @@ async def health() -> dict:
     return {"status": "ok"}
 
 templates = TemplateConfig(
-    directory=Path("templates"),
+    directory=BASE_DIR / Path("templates"),
     engine=JinjaTemplateEngine,
 )
 
