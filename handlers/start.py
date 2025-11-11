@@ -20,7 +20,7 @@ ERROR_TEXT = "❌ Произошла ошибка. Попробуйте позж
 @dp.message(Command("start"))
 async def cmd_start(message: types.Message):
     user_id = message.from_user.id #type: ignore
-    logger.info(f"ID : {user_id} | Ввёл команду /start")
+    logger.debug(f"ID : {user_id} | Ввёл команду /start")
     user = await get_user(user_id)
     
     if not user:
@@ -40,7 +40,7 @@ async def cmd_start(message: types.Message):
 @dp.callback_query(F.data == "start_menu")
 async def call_start(callback: CallbackQuery):
     user_id = callback.from_user.id #type: ignore
-    logger.info(f"ID : {user_id} | Нажал старт меню")
+    logger.debug(f"ID : {user_id} | Нажал старт меню")
     user = await get_user(user_id)
     
     if user is None:
@@ -59,5 +59,5 @@ async def call_start(callback: CallbackQuery):
 @dp.message(Command("id"))
 async def cmd_id(message: types.Message):
     user_id = message.from_user.id #type: ignore
-    logger.info(f"ID : {user_id} | Ввёл команду /id")
+    logger.debug(f"ID : {user_id} | Ввёл команду /id")
     await message.answer(f"🆔 Ваш ID: <code>{message.from_user.id}</code>", parse_mode="HTML") # type: ignore

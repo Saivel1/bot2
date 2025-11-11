@@ -5,6 +5,7 @@ from config_data.config import settings as s
 from logger_setup import logger
 from datetime import datetime, timedelta
 from typing import Optional, Dict, Any
+import json
 
 MARZ_DATA = (s.M_DIGITAL_U, s.M_DIGITAL_P, s.M_DIGITAL_URL)
 
@@ -57,7 +58,7 @@ class MarzbanClient:
                 "password": self.password
             }
             url = f"{self.base_url}/api/admin/token"
-            logger.info(f'Это url {url}')
+            logger.debug(f'Это url {url}')
 
             async with session.post(
                 url=url,
@@ -69,7 +70,7 @@ class MarzbanClient:
                     self.headers["Authorization"] = f"Bearer {self._token}"
                     # Токен действителен 30 дней
                     self._token_expires_at = datetime.now() + timedelta(days=29)
-                    logger.info(f"Токен получен: {self._token[:10]}...")
+                    logger.debug(f"Токен получен: {self._token[:10]}...")
                 else:
                     error_text = await response.text()
                     logger.error(f"Ошибка авторизации: {response.status}, {error_text}")
@@ -89,10 +90,9 @@ class MarzbanClient:
                 url=f"{self.base_url}/api/user/{user_id}",
                 headers=self.headers
             ) as response:
-                logger.info(await response.json())
                 if response.status in (200, 201):
                     json_data = await response.json()
-                    logger.info(f"Пользователь {user_id} получен")
+                    logger.debug(f"Пользователь {user_id} получен в функции get_user")
                     return json_data
                 else:
                     logger.warning(f"Ошибка в получении пользователя {user_id}: {response.status}")
@@ -118,7 +118,7 @@ class MarzbanClient:
                 
                 if response.status in (200, 201):
                     json_data = await response.json()
-                    logger.info(f"Пользователь {user_id} изменён")
+                    logger.debug(f"Пользователь {user_id} изменён")
                     return json_data
                 else:
                     logger.warning(f"Ошибка в редактировании пользователя {user_id}: {response.status}")
@@ -153,12 +153,11 @@ class MarzbanClient:
                 headers=self.headers,
                 json=data
             ) as response:
-                logger.info(self.headers)
-                logger.info(data)
-                logger.info(f"{self.base_url}/api/user")
                 if response.status in (200, 201):
                     json_data = await response.json()
-                    logger.info(f"Пользователь {username} создан: {json_data}")
+                    json_str = json.dumps(json_data)
+
+                    logger.debug(f"Пользователь {username} создан: {json_str[:25]}")
                     return json_data
                 else:
                     error_text = await response.text()
@@ -203,9 +202,12 @@ class MarzbanClient:
                 headers=self.headers,
                 json=data
             ) as response:
+                
                 if response.status in (200, 201):
                     json_data = await response.json()
-                    logger.info(f"Пользователь {username} создан: {json_data["username"]}")
+                    json_str = json.dumps(json_data)
+
+                    logger.debug(f"Пользователь {username} создан: {json_str[:25]}")
                     return json_data
                 else:
                     error_text = await response.text()
@@ -228,7 +230,7 @@ class MarzbanClient:
             ) as response:
                 
                 if response.status in (200, 204):
-                    logger.info(f"Пользователь {username} удалён")
+                    logger.debug(f"Пользователь {username} удалён")
                     return True
                 else:
                     logger.warning(f"Ошибка при удалении пользователя {username}: {response.status}")

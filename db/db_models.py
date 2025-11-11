@@ -42,6 +42,7 @@ class LinksOrm(Base):
     panel_1: Mapped[str | None]
     panel_2: Mapped[str | None]
 
+
 class PanelQueue(Base):
     __tablename__ = 'add_to_panel_queue'
 

@@ -11,7 +11,7 @@ from keyboards.markup import Instruction
 @dp.callback_query(F.data == "instruction")
 async def instriction_menu(callback: CallbackQuery):
     user_id = callback.from_user.id #type: ignore
-    logger.info(f"ID : {user_id} | Нажал кнопку инстуркция")
+    logger.debug(f"ID : {user_id} | Нажал кнопку инстуркция")
 
     user = await get_user_in_links(user_id=user_id)
     if not user:

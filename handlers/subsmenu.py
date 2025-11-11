@@ -19,7 +19,8 @@ text_pattern = """
 @dp.callback_query(F.data == "subs")
 async def main_subs(callback: CallbackQuery):
     user_id = str(callback.from_user.id)
-    logger.info(f"ID : {user_id} | Нажал Subs")
+    logger.debug(f"ID : {user_id} | Нажал Subs")
+
     res = await get_sub_url(user_id)
     if res is None:
         await callback.message.edit_text( #type: ignore
@@ -27,6 +28,7 @@ async def main_subs(callback: CallbackQuery):
             reply_markup=BackButton.back_start()
         )
         return
+    
     sub_link = res.uuid
     text_reponse = text_pattern
     text_reponse += "\n" + f"`{s.IN_SUB_LINK}{sub_link}`" #type: ignore
@@ -34,7 +36,7 @@ async def main_subs(callback: CallbackQuery):
     res = await marzban_client.get_user(user_id)
     data = await to_link(res) #type: ignore
 
-    
+
     await callback.message.edit_text( #type: ignore
         text=text_reponse,
         reply_markup=SubMenu.links_keyboard(data.titles), #type: ignore
@@ -46,17 +48,23 @@ async def main_subs(callback: CallbackQuery):
 async def process_sub(callback: CallbackQuery):
     sub_id = callback.data.replace("sub_", "") #type: ignore
     user_id = str(callback.from_user.id)
-    logger.info(f"ID : {user_id} | Нажал {callback.data}")
+
+    logger.debug(f"ID : {user_id} | Нажал {callback.data}")
     res = await marzban_client.get_user(user_id)
+
+
     if res is None:
         await callback.message.edit_text( #type: ignore
             text="❌ Подписка не найдена",
             reply_markup=BackButton.back_subs()
         )    
+
     data = await to_link(res) #type: ignore
     links_marz = data.links #type: ignore
+
     uuid = await get_user_in_links(user_id=user_id)
     sub_url = f"{s.IN_SUB_LINK + uuid.uuid}" #type: ignore
+
     link = links_marz[int(sub_id)] #type: ignore
     text_response = f"""🔐 <b>Ваши подписки IV VPN</b>
 
@@ -68,6 +76,7 @@ async def process_sub(callback: CallbackQuery):
 
 💡 <i>Используйте универсальную ссылку для автоматического обновления серверов, или ключ для ручной настройки.</i>
 """
+    
     await callback.message.edit_text( #type: ignore
         text=text_response,
         reply_markup=SubMenu.links_keyboard(links=data.titles), #type: ignore

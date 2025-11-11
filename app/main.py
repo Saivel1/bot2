@@ -1,24 +1,25 @@
 from aiogram import types
 from bot_instance import bot, dp
 from config_data.config import settings
-from contextlib import asynccontextmanager
 from logger_setup import logger
-from db.database import engine, async_session
-from db.db_models import Base, PaymentData, LinksOrm
+from db.database import async_session
+from db.db_models import PaymentData, LinksOrm, PanelQueue
 from repositories.base import BaseRepository
-from keyboards.deps import BackButton
-from misc.utils import modify_user, calculate_expire, get_user, new_date, get_links_of_panels
-import aiohttp, asyncio
+from misc.utils import get_links_of_panels
 from marz.backend import MarzbanClient
-from litestar import get, post, Litestar
-from litestar.response import Redirect
+
+from litestar import Litestar, post, get, Request
+from litestar.response import Redirect,Template
 from litestar.exceptions import NotFoundException, ServiceUnavailableException
-from litestar.status_codes import HTTP_302_FOUND
 from litestar.contrib.jinja import JinjaTemplateEngine
 from litestar.template.config import TemplateConfig
-from pathlib import Path
-from litestar.response import Template
 from litestar.static_files import StaticFilesConfig
+
+from pathlib import Path
+import json
+import aiohttp, asyncio
+from contextlib import asynccontextmanager
+
 
 
 # # Импортируем handlers для регистрации
@@ -26,16 +27,6 @@ import handlers.start
 import handlers.instructions
 import handlers.subsmenu
 
-
-# app/main.py
-from litestar import Litestar, post, get, Request
-from litestar.response import Redirect
-from litestar.exceptions import NotFoundException, ServiceUnavailableException
-from contextlib import asynccontextmanager
-
-import asyncio
-import aiohttp
-from aiogram import types
 
 BASE_DIR = Path(__file__).parent
 
@@ -45,11 +36,12 @@ BASE_DIR = Path(__file__).parent
 async def lifespan(app: Litestar):
     """Lifecycle events для установки/удаления webhook"""
     await bot.delete_webhook()
+    logger.debug("Вебхук удалён")
     await bot.set_webhook(
         url=settings.WEBHOOK_URL,
         drop_pending_updates=False
     )
-    print(f"Webhook установлен: {settings.WEBHOOK_URL}")
+    logger.info(f"Webhook установлен: {settings.WEBHOOK_URL}")
     # async with engine.begin() as conn:
     #     await conn.run_sync(Base.metadata.drop_all)
     #     await conn.run_sync(Base.metadata.create_all)
@@ -58,7 +50,7 @@ async def lifespan(app: Litestar):
 
     await bot.session.close()
     await bot.delete_webhook()
-    print("Бот остановлен")
+    logger.info("Бот остановлен")
 
 
 # Health check
@@ -69,6 +61,7 @@ async def root() -> dict:
 
 @get("/health")
 async def health() -> dict:
+    logger.debug(f'{"="*15}Health{"="*15}')
     return {"status": "ok"}
 
 templates = TemplateConfig(
@@ -84,7 +77,7 @@ async def vpn_guide(user_id: str) -> Template:
         "subscription_link": f"{settings.IN_SUB_LINK}{user_id}",
         "user_id": user_id
     }
-
+    logger.debug(f"UUID: {user_id}| Перешёл по ссылке гайда")
     return Template(
         template_name="guide.html",
         context={
@@ -97,59 +90,97 @@ async def vpn_guide(user_id: str) -> Template:
 # Telegram webhook
 @post("/webhook")
 async def webhook(request: Request) -> dict:
+    logger.debug(f"Запрос от TelegramAPI пришёл.")
     data = await request.json()
+
+    logger.debug(f"Udate TelegramApi {data}")
     update = types.Update(**data)
+
     await dp.feed_update(bot, update)
     return {"ok": True}
 
 
 async def accept_panel(new_link: dict, username: str):
-    logger.info("Зашли в редактор БД")
-    async with async_session() as session:
-        repo = BaseRepository(session=session, model=LinksOrm)
-        logger.info(f'{"="*15} Репо создан {"="*15}')
-        base_res = await repo.update_where(
-                data=new_link, 
-                user_id=username)
-        logger.info(f'Новая запись {base_res}')
+    logger.debug("Зашли в редактор БД")
+    try:
+        async with async_session() as session:
+            repo = BaseRepository(session=session, model=LinksOrm)
+            logger.debug(f'{"="*15} Репо создан {"="*15}')
+            base_res = await repo.update_where(
+                    data=new_link, 
+                    user_id=username)
+            logger.debug(f'Новая запись {base_res}')
+    except Exception as e:
+        logger.error(f'Ошибка при добавленни ссылки в БД {e}')
+        raise ValueError
 
 
 # Marzban webhook
 @post("/marzban")
 async def webhook_marz(request: Request) -> dict:
     data = await request.json()
+    data_str = json.dumps(data, ensure_ascii=False)
+    logger.debug(f'Пришёл запрос от Marzban {data_str[:20]}')
+
     pan = data[0]["user"]["subscription_url"]
+    logger.debug(f'Пришёл запрос от Marzban с панели: {pan[:15]}')
+
     pan1 = False
+    url_for_create = ""
 
     if pan.find("dns1") != -1: # Если в панели есть dns1 - значит это первая панель
         backend = MarzbanClient(settings.DNS2_URL)
         pan1 = True
+        url_for_create = settings.DNS2_URL
     else:
         backend = MarzbanClient(settings.DNS1_URL)
+        url_for_create = settings.DNS1_URL
+
 
     username = data[0]['username']
     inbounds = data[0]['user']['inbounds']['vless']
-    id = data[0]['user']['proxies']['vless']['id']
-    expire = data[0]['user']['expire']
+    id =       data[0]['user']['proxies']['vless']['id']
+    expire =   data[0]['user']['expire']
 
-    logger.info(f'username --- {username} --- inbounds {inbounds} --- id {id}')
+    logger.debug(f'Данные пользователя: username --- {username} --- inbounds {inbounds} --- id {id}')
     try:
         res = await backend.create_user_options(username=username, id=id, inbounds=inbounds, expire=expire)
+
         if res is None:
              return {"error": 'При создании пользоваетеля возникла ошибка'}
-        logger.info(res["username"]) 
+        logger.debug(f'Создан пользователь: {res["username"]}') 
 
         new_link = dict()
         if pan1:
             new_link['panel_2'] = res["subscription_url"]
         else:
             new_link['panel_1'] = res["subscription_url"]
-        logger.info(f"Данные для бд {'='*15} {new_link} {username}")
-
+        
+        logger.debug(f"Данные для бд {'='*15} {new_link} : {username}")
+        # Добавляем в бд запись о новой ссылке
         await accept_panel(new_link=new_link, username=username)
 
-    except:
-        pass
+    except ValueError:
+        logger.error('Не получилось получить вторую ссылку')
+
+    except Exception as e:
+        logger.error("Ошибка с Марзбан")
+        async with async_session() as session:
+            repo = BaseRepository(session=session, model=PanelQueue)
+            if not isinstance(expire, int):
+                expire = int(expire) if expire else 0
+
+            if not isinstance(inbounds, list):
+                inbounds = inbounds if isinstance(inbounds, list) else [inbounds] if inbounds else []
+
+            await repo.create({
+                "uuid": id,
+                "panel": url_for_create,
+                "username": username,
+                "expire": expire,
+                "inbounds": inbounds
+            })
+
     return {"ok": True}
 
 
@@ -160,7 +191,7 @@ async def process_sub(uuid: str) -> Redirect:
     """Проверяем все панели параллельно"""
     
     links = await get_links_of_panels(uuid=uuid)
-    logger.info(f'Ссылки {links}')
+    logger.debug(f'Ссылки {links}')
     
     if not links:
         raise NotFoundException(detail="Subscription not found")
@@ -181,9 +212,9 @@ async def process_sub(uuid: str) -> Redirect:
     # Выбираем первую рабочую
     for is_available, link in results:
         if is_available:
-            logger.info(f"Подписка отдана: {link}")
+            logger.debug(f"Подписка отдана: {link}")
             return Redirect(path=link)
-    
+    logger.warning("Панели недоступны")
     # Все недоступны
     raise ServiceUnavailableException(detail="All panels unavailable")
 
