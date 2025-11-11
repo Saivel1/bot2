@@ -212,7 +212,7 @@ class MarzbanClient:
                 else:
                     error_text = await response.text()
                     logger.warning(f"Ошибка в создании пользователя: {response.status}, {error_text}")
-                    return None
+                    return {"status": 409}
                     
         except Exception as e:
             logger.error(f"Исключение при создании пользователя {username}: {e}")

@@ -147,7 +147,11 @@ async def webhook_marz(request: Request) -> dict:
         res = await backend.create_user_options(username=username, id=id, inbounds=inbounds, expire=expire)
 
         if res is None:
-             return {"error": 'При создании пользоваетеля возникла ошибка'}
+            return {"error": 'При создании пользоваетеля возникла ошибка'}
+        
+        if res['status'] == 409:
+            return {"msg": "тут нечего делать"}
+            
         logger.debug(f'Создан пользователь: {res["username"]}') 
 
         new_link = dict()
@@ -211,6 +215,41 @@ async def process_sub(uuid: str) -> Redirect:
     
     # Выбираем первую рабочую
     for is_available, link in results:
+        if is_available:
+            logger.debug(f"Подписка отдана: {link}")
+            return Redirect(path=link)
+    logger.warning("Панели недоступны")
+    # Все недоступны
+    raise ServiceUnavailableException(detail="All panels unavailable")
+
+
+# Subscription redirect
+@get("/sub/{uuid:str}/info")
+async def process_sub_info(uuid: str) -> Redirect:
+    """Проверяем все панели параллельно"""
+    
+    links = await get_links_of_panels(uuid=uuid)
+    logger.debug(f'Ссылки {links}')
+    
+    if not links:
+        raise NotFoundException(detail="Subscription not found")
+    
+    async def check_panel(link: str) -> tuple[bool, str]:
+        """Проверить доступность панели"""
+        try:
+            timeout = aiohttp.ClientTimeout(total=3.0)
+            async with aiohttp.ClientSession(timeout=timeout) as session:
+                response = await session.get(url=link)
+                return (response.status in (200, 201), link)
+        except Exception:
+            return (False, link)
+    
+    # Проверяем все панели параллельно
+    results = await asyncio.gather(*[check_panel(link) for link in links])
+    
+    # Выбираем первую рабочую
+    for is_available, link in results:
+        link = link + "/info"
         if is_available:
             logger.debug(f"Подписка отдана: {link}")
             return Redirect(path=link)

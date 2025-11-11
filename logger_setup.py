@@ -1,10 +1,9 @@
 import logging
 import sys
-from logging.handlers import RotatingFileHandler
 
 
 logger = logging.getLogger(__name__)
-level = logging.DEBUG
+level = logging.INFO
 logger.setLevel(level)  # <<— ВАЖНО: иначе DEBUG не увидишь
 
 formatter_1 = logging.Formatter(
