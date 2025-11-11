@@ -205,7 +205,7 @@ class MarzbanClient:
             ) as response:
                 if response.status in (200, 201):
                     json_data = await response.json()
-                    logger.info(f"Пользователь {username} создан: {json_data[:20]}")
+                    logger.info(f"Пользователь {username} создан: {json_data["username"]}")
                     return json_data
                 else:
                     error_text = await response.text()
