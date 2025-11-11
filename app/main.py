@@ -135,9 +135,10 @@ async def webhook_marz(request: Request) -> dict:
             else:
                 new_link['panel_1'] = res["subscription_url"]
 
-            await repo.update_one(
+            base_res = await repo.update_one(
                 new_link, 
                 username=username)
+            logger.info(f'Новая запись {base_res}')
 
     except:
         pass
