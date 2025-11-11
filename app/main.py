@@ -104,6 +104,7 @@ async def webhook(request: Request) -> dict:
 
 
 async def accept_panel(new_link: dict, username: str):
+    logger.info("Зашли в редактор БД")
     async with async_session() as session:
         repo = BaseRepository(session=session, model=LinksOrm)
         base_res = await repo.update_one(
@@ -142,6 +143,8 @@ async def webhook_marz(request: Request) -> dict:
             new_link['panel_2'] = res["subscription_url"]
         else:
             new_link['panel_1'] = res["subscription_url"]
+        logger.info(f"Данные для бд {'='*15} {new_link} {username}")
+
         await accept_panel(new_link=new_link, username=username)
 
     except:
