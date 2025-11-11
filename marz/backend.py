@@ -45,8 +45,8 @@ class MarzbanClient:
     async def _ensure_token(self):
         """Проверить и обновить токен при необходимости"""
         # Если токен валиден - ничего не делаем
-        if self._token and self._token_expires_at and datetime.now() < self._token_expires_at:
-            return
+        # if self._token and self._token_expires_at and datetime.now() < self._token_expires_at:
+        #     return
         
         # Получаем новый токен
         try:
