@@ -108,8 +108,8 @@ async def accept_panel(new_link: dict, username: str):
     async with async_session() as session:
         repo = BaseRepository(session=session, model=LinksOrm)
         logger.info(f'{"="*15} Репо создан {"="*15}')
-        base_res = await repo.update_one(
-                new_link, 
+        base_res = await repo.update_where(
+                data=new_link, 
                 username=username)
         logger.info(f'Новая запись {base_res}')
 

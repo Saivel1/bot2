@@ -176,10 +176,10 @@ class BaseRepository(Generic[T]):
         obj = await self.get_one(**filters)
         if not obj:
             return None
-
+        print(f"Получил словарь {data}")
         for k, v in data.items():
             setattr(obj, k, v)
-
+        
         await self.session.commit()
         await self.session.refresh(obj)
         return obj
@@ -190,6 +190,8 @@ class BaseRepository(Generic[T]):
         """
         stmt = update(self.model).values(**data).execution_options(synchronize_session="fetch")
         stmt = self._apply_filters(stmt, **filters) # type:ignore
+        print(f"Получил словарь {data}")
+
         res = await self.session.execute(stmt)
         await self.session.commit()
         return res.rowcount or 0 # type:ignore
