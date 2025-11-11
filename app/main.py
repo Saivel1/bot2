@@ -103,6 +103,15 @@ async def webhook(request: Request) -> dict:
     return {"ok": True}
 
 
+async def accept_panel(new_link: dict, username: str):
+    async with async_session() as session:
+        repo = BaseRepository(session=session, model=LinksOrm)
+        base_res = await repo.update_one(
+                new_link, 
+                username=username)
+        logger.info(f'Новая запись {base_res}')
+
+
 # Marzban webhook
 @post("/marzban")
 async def webhook_marz(request: Request) -> dict:
@@ -127,18 +136,13 @@ async def webhook_marz(request: Request) -> dict:
         if res is None:
              return {"error": 'При создании пользоваетеля возникла ошибка'}
         logger.info(res["username"]) 
-        async with async_session() as session:
-            repo = BaseRepository(session=session, model=LinksOrm)
-            new_link = dict()
-            if pan1:
-                new_link['panel_2'] = res["subscription_url"]
-            else:
-                new_link['panel_1'] = res["subscription_url"]
 
-            base_res = await repo.update_one(
-                new_link, 
-                username=username)
-            logger.info(f'Новая запись {base_res}')
+        new_link = dict()
+        if pan1:
+            new_link['panel_2'] = res["subscription_url"]
+        else:
+            new_link['panel_1'] = res["subscription_url"]
+        await accept_panel(new_link=new_link, username=username)
 
     except:
         pass
