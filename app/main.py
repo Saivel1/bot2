@@ -215,7 +215,7 @@ app = Litestar(
         vpn_guide
     ],
     lifespan=[lifespan],
-    debug=True,
+    debug=False,
     static_files_config=[
         StaticFilesConfig(
             path="/static",
