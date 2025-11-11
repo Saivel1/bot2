@@ -1,8 +1,7 @@
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 from datetime import datetime
 from sqlalchemy import func, ForeignKey
-from sqlalchemy import types, ARRAY
-from typing import Type
+from sqlalchemy import ARRAY, String
 
 
 class Base(DeclarativeBase):
@@ -50,4 +49,4 @@ class PanelQueue(Base):
     panel: Mapped[str]
     username: Mapped[str]
     expire: Mapped[int]
-    inbounds: Mapped[list] = mapped_column(ARRAY)
+    inbounds: Mapped[list] = mapped_column(ARRAY(item_type=String))
