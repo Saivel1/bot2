@@ -282,7 +282,8 @@ app = Litestar(
         webhook,
         webhook_marz,
         process_sub,
-        vpn_guide
+        vpn_guide,
+        process_sub_info
     ],
     lifespan=[lifespan],
     debug=False,
