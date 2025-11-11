@@ -211,7 +211,6 @@ app = Litestar(
         StaticFilesConfig(
             path="/static",
             directories=[BASE_DIR / Path("templates" / Path("static"))],  # Папка, где лежит favicon.ico
-            name="favicon",
         )
     ],
     template_config=templates
