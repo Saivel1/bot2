@@ -213,4 +213,5 @@ app = Litestar(
             name="favicon",
         )
     ],
+    template_config=templates
 )
