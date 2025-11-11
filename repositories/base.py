@@ -173,6 +173,8 @@ class BaseRepository(Generic[T]):
         Обновляет одну запись, найденную по фильтрам.
         Возвращает обновлённый объект или None, если не найдено.
         """
+        print(f"Получил словарь {data}")
+        print(f"Получил фильтры {filters}")
         obj = await self.get_one(**filters)
         if not obj:
             return None
