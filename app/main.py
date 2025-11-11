@@ -107,6 +107,7 @@ async def accept_panel(new_link: dict, username: str):
     logger.info("Зашли в редактор БД")
     async with async_session() as session:
         repo = BaseRepository(session=session, model=LinksOrm)
+        logger.info(f'{"="*15} Репо создан {"="*15}')
         base_res = await repo.update_one(
                 new_link, 
                 username=username)
