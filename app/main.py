@@ -76,6 +76,7 @@ templates = TemplateConfig(
     engine=JinjaTemplateEngine,
 )
 
+
 # Route handler
 @get("/vpn-guide/{user_id:str}")
 async def vpn_guide(user_id: str) -> Template:
@@ -208,8 +209,8 @@ app = Litestar(
     debug=True,
     static_files_config=[
         StaticFilesConfig(
-            path="/favicon.ico",
-            directories=[Path("templates/static")],  # Папка, где лежит favicon.ico
+            path="/favicon.png",
+            directories=[BASE_DIR / Path("templates" / Path("static"))],  # Папка, где лежит favicon.ico
             name="favicon",
         )
     ],
