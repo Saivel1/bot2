@@ -110,7 +110,7 @@ async def accept_panel(new_link: dict, username: str):
         logger.info(f'{"="*15} Репо создан {"="*15}')
         base_res = await repo.update_where(
                 data=new_link, 
-                username=username)
+                user_id=username)
         logger.info(f'Новая запись {base_res}')
 
 
