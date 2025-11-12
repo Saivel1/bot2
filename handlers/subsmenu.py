@@ -7,6 +7,7 @@ from logger_setup import logger
 from marz.backend import marzban_client
 from misc.utils import to_link, get_sub_url, get_user_in_links
 from config_data.config import settings as s
+import aiohttp
 
 text_pattern = """
 🔐 **Ваши подписки IV VPN**
@@ -48,17 +49,21 @@ async def main_subs(callback: CallbackQuery):
 async def process_sub(callback: CallbackQuery):
     sub_id = callback.data.replace("sub_", "") #type: ignore
     user_id = str(callback.from_user.id)
-
     logger.debug(f"ID : {user_id} | Нажал {callback.data}")
-    res = await marzban_client.get_user(user_id)
 
 
-    if res is None:
+    uuid = await get_user_in_links(user_id=user_id)
+    if uuid is None:
         await callback.message.edit_text( #type: ignore
             text="❌ Подписка не найдена",
             reply_markup=BackButton.back_subs()
-        )    
+        ) 
+    sub_url = f"{s.IN_SUB_LINK + uuid.uuid}" #type: ignore
+    async with aiohttp.ClientSession() as session:
+        req = await session.get(url=f'{sub_url}/info')
+        res = await req.json()
 
+       
     data = await to_link(res) #type: ignore
     links_marz = data.links #type: ignore
 
