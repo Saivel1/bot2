@@ -121,7 +121,7 @@ async def webhook_marz(request: Request) -> dict:
     data = await request.json()
     data_str = json.dumps(data, ensure_ascii=False)
     logger.debug(f'Пришёл запрос от Marzban {data_str[:20]}')
-
+    logger.info(data)
     pan = data[0]["user"]["subscription_url"]
     logger.debug(f'Пришёл запрос от Marzban с панели: {pan[:15]}')
 

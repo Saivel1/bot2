@@ -55,7 +55,7 @@ async def get_user_in_links(user_id):
         user_repo = BaseRepository(session=session, model=LinksOrm)
         logger.info(user_id)
         res = await user_repo.get_one(user_id=user_id)
-        logger.info(res)
+        logger.debug(res)
         return res
     
 
@@ -63,7 +63,7 @@ async def get_links_of_panels(uuid: str) -> list | None:
     async with async_session() as session:
         user_repo = BaseRepository(session=session, model=LinksOrm)
         res = await user_repo.get_one(uuid=uuid)
-        logger.info(res)
+        logger.debug(res)
 
         if res is None:
             return None
@@ -74,13 +74,13 @@ async def modify_user(username):
     username = str(username)
 
     user = await marzban_client.get_user(user_id=username)
-    logger.info(user)
+    logger.debug(user)
     if user is None:
         user = await marzban_client.create_user(username=username)
         logger.info(f'Зареган {user}')
     
     link = await get_user_in_links(user_id=username)
-    logger.info(f"Это ссылка {link}")
+    logger.debug(f"Это ссылка {link}")
     if not link:
         async with async_session() as session:
             repo = BaseRepository(session=session, model=LinksOrm)
@@ -90,14 +90,14 @@ async def modify_user(username):
                 "uuid": user_uuid,
             }
             sub_url = user['subscription_url'] #type: ignore
-            logger.info(f"DATA PANEL: {data_panel}")
+            logger.debug(f"DATA PANEL: {data_panel}")
             if sub_url.find("world") != -1:
                 data_panel["panel_1"] = sub_url
             else:
                 data_panel["panel_2"] = sub_url
-            logger.info(f"DATA PANEL AFTER: {data_panel}")
+            logger.debug(f"DATA PANEL AFTER: {data_panel}")
             res = await repo.create(data_panel)
-            logger.info(res)
+            logger.debug(res)
 
         await marzban_client.modify_user(
             user_id=username,
