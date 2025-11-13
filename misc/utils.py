@@ -52,7 +52,7 @@ async def get_user_cached(user_id: str, ttl: int = 300) -> dict | None:
     
     # Пытаемся достать из кэша
     cached = await redis_client.get(cache_key) #type: ignore
-    
+    logger.debug(f'Получил кэш {cached}')
     if cached:
         logger.debug(f"Cache hit для {user_id}")
         return json.loads(cached)

@@ -30,12 +30,16 @@ async def main_subs(callback: CallbackQuery):
         )
         return
     
+    logger.debug(f"ID : {user_id} | Получил Subs url {res}")
+
     sub_link = res.uuid
     text_reponse = text_pattern
     text_reponse += "\n" + f"`{s.IN_SUB_LINK}{sub_link}`" #type: ignore
 
-    res = await get_user_cached(user_id=user_id)
+    logger.debug(f"ID : {user_id} | Получил Паттерн и uuid {sub_link}")
 
+    res = await get_user_cached(user_id=user_id)
+    
     if res is None:
         await callback.message.edit_text( #type: ignore
             text="❌ Возникла ошибка при выдачи подписки попробуйте позже.",
