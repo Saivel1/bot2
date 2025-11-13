@@ -137,13 +137,15 @@ async def webhook_marz(request: Request) -> dict:
     data_str = json.dumps(data, ensure_ascii=False)
 
     username = data[0]['username']
-    current_time = time.time()
+    action   = data[0]['action']
 
+    if await redis_client.exists(username): #type: ignore
+        logger.info(f'Дублирование операции для {username}')
+        return {'msg': 'operation for user been'}
 
-    if username in creat_queue:
-        return {"msg": "already exist"}
+    if action == 'user_created':
+        await redis_client.set("marzban:create", username, ex=20) #type: ignore
 
-    creat_queue['username'] = time.time()
 
     logger.debug(f'Пришёл запрос от Marzban {data_str[:20]}')
     logger.info(data)
