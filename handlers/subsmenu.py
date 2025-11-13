@@ -58,10 +58,10 @@ async def main_subs(callback: CallbackQuery):
 
 @dp.callback_query(F.data.startswith("sub_"))
 async def process_sub(callback: CallbackQuery):
+    await callback.answer()
     sub_id = callback.data.replace("sub_", "") #type: ignore
     user_id = str(callback.from_user.id)
     logger.debug(f"ID : {user_id} | Нажал {callback.data}")
-    await callback.answer()
 
 
     uuid = await get_user_in_links(user_id=user_id)
