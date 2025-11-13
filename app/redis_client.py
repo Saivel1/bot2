@@ -1,5 +1,8 @@
 from redis.asyncio import Redis
 from config_data.config import settings
+from typing import Optional
+
+redis_client: Optional[Redis] = None
 
 
 async def init_redis() -> Redis:
@@ -14,3 +17,9 @@ async def init_redis() -> Redis:
         socket_keepalive=True,
         health_check_interval=30,
     )
+
+async def close_redis():
+    """Закрытие Redis"""
+    global redis_client
+    if redis_client:
+        await redis_client.aclose()

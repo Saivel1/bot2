@@ -7,8 +7,7 @@ from logger_setup import logger
 from marz.backend import marzban_client
 from misc.utils import to_link, get_sub_url, get_user_in_links, get_user_cached
 from config_data.config import settings as s
-import aiohttp
-from app.main import redis_client
+
 
 text_pattern = """
 🔐 **Ваши подписки IV VPN**

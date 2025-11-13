@@ -13,7 +13,7 @@ from marz.backend import MarzbanClient
 from config_data.config import settings
 import json
 from typing import Optional
-from app.main import redis_client
+from app.redis_client import redis_client
 
 MONTH = 30
 

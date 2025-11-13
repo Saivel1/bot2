@@ -48,18 +48,21 @@ async def lifespan(app: Litestar):
     # async with engine.begin() as conn:
     #     await conn.run_sync(Base.metadata.drop_all)
     #     await conn.run_sync(Base.metadata.create_all)
+
     global redis_client
-    redis_client = await init_redis()
-    await redis_client.ping()  # type: ignore
+    import app.redis_client as redis_module
+    from app.redis_client import close_redis
+    
+    redis_module.redis_client = await init_redis()
+    await redis_module.redis_client.ping() #type: ignore
     logger.info("Redis connected")
 
 
     yield
 
 
-    if redis_client:
-        await redis_client.aclose()
-        logger.info("Redis disconnected")
+    await close_redis()
+    logger.info("Redis disconnected")
 
     await bot.session.close()
     await bot.delete_webhook()
