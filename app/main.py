@@ -38,7 +38,7 @@ redis_client: Redis | None = None
 @asynccontextmanager
 async def lifespan(app: Litestar):
     """Lifecycle events для установки/удаления webhook"""
-    await bot.delete_webhook()
+    await bot.delete_webhook(drop_pending_updates=True)
     logger.debug("Вебхук удалён")
     await bot.set_webhook(
         url=settings.WEBHOOK_URL,
@@ -52,7 +52,7 @@ async def lifespan(app: Litestar):
     global redis_client
     import app.redis_client as redis_module
     from app.redis_client import close_redis
-    
+
     redis_module.redis_client = await init_redis()
     await redis_module.redis_client.ping() #type: ignore
     logger.info("Redis connected")
