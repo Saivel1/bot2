@@ -6,7 +6,7 @@ from logger_setup import logger
 from db.database import async_session
 from db.db_models import PaymentData, LinksOrm, PanelQueue
 from repositories.base import BaseRepository
-from misc.utils import get_links_of_panels, get_user, modify_user, new_date, create_user_sync
+from misc.utils import get_links_of_panels, get_user, modify_user, new_date, create_user_sync, update_user_sync
 from marz.backend import MarzbanClient, marzban_client
 from app.redis_client import init_redis
 from redis.asyncio import Redis
@@ -129,7 +129,6 @@ async def accept_panel(new_link: dict, username: str):
         raise ValueError
 
 
-creat_queue = dict()
 
 # Marzban webhook
 @post("/marzban")
@@ -156,11 +155,11 @@ async def webhook_marz(request: Request) -> dict:
     if action == 'user_created':
         await create_user_sync(data=data)
     elif action == 'user_updated':
-        pass
+        await update_user_sync(data=data)
     elif action == 'user_expired':
         print('Отправить сообщение юзеру')
-    else:
-        logger.info(data)
+    elif action == 'reached_days_left':
+        print('Отправить сообщение юзеру День остался')
 
     return {"ok": True}
 

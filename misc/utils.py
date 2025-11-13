@@ -171,14 +171,7 @@ async def get_sub_url(user_id):
     return res
 
 
-async def create_user_sync(data):
-    '''
-    Эта функция создаёт пользователя в Marzban принимая на вход
-    данные из запроса от самого Marzban и перенаправляя его в другую 
-    панель
-    '''
-
-    async def accept_panel(new_link: dict, username: str):
+async def accept_panel(new_link: dict, username: str):
         logger.debug("Зашли в редактор БД")
         try:
             async with async_session() as session:
@@ -192,22 +185,27 @@ async def create_user_sync(data):
             logger.error(f'Ошибка при добавленни ссылки в БД {e}')
             raise ValueError
     
-    username = data[0]['username']
 
+
+async def create_user_sync(data):
+    '''
+    Эта функция создаёт пользователя в Marzban принимая на вход
+    данные из запроса от самого Marzban и перенаправляя его в другую 
+    панель
+    '''
+
+    username = data[0]['username']
 
     pan = data[0]["user"]["subscription_url"]
     logger.debug(f'Пришёл запрос от Marzban с панели: {pan[:15]}')
 
     pan1 = False
-    url_for_create = ""
 
     if pan.find("dns1") != -1: # Если в панели есть dns1 - значит это первая панель
         backend = MarzbanClient(settings.DNS2_URL)
         pan1 = True
-        url_for_create = settings.DNS2_URL
     else:
         backend = MarzbanClient(settings.DNS1_URL)
-        url_for_create = settings.DNS1_URL
 
 
     inbounds = data[0]['user']['inbounds']['vless']
@@ -233,28 +231,56 @@ async def create_user_sync(data):
             new_link['panel_1'] = res["subscription_url"]
         
         logger.debug(f"Данные для бд {'='*15} {new_link} : {username}")
+
         # Добавляем в бд запись о новой ссылке
         await accept_panel(new_link=new_link, username=username)
 
     except ValueError:
         logger.error('Не получилось получить вторую ссылку')
-
     except Exception as e:
-        logger.error("Ошибка с Марзбан")
-        async with async_session() as session:
-            repo = BaseRepository(session=session, model=PanelQueue)
-            if not isinstance(expire, int):
-                expire = int(expire) if expire else 0
+        logger.error(f'Возникла ошибка: {e}')
 
-            if not isinstance(inbounds, list):
-                inbounds = inbounds if isinstance(inbounds, list) else [inbounds] if inbounds else []
 
-            await repo.create({
-                "uuid": id,
-                "panel": url_for_create,
-                "username": username,
-                "expire": expire,
-                "inbounds": inbounds
-            })
+async def update_user_sync(data):
+    '''
+    Эта функция создаёт пользователя в Marzban принимая на вход
+    данные из запроса от самого Marzban и перенаправляя его в другую 
+    панель
+    '''
+    username = data[0]['username']
+
+    pan = data[0]["user"]["subscription_url"]
+    logger.debug(f'Пришёл запрос от Marzban с панели: {pan[:15]}')
+
+    pan1 = False
+
+    if pan.find("dns1") != -1: # Если в панели есть dns1 - значит это первая панель
+        backend = MarzbanClient(settings.DNS2_URL)
+        pan1 = True
+    else:
+        backend = MarzbanClient(settings.DNS1_URL)
+
+    expire =   data[0]['user']['expire']
+
+    try:
+        res = await backend.modify_user(user_id=username, expire=expire)
+
+        if res is None:
+            return {"error": 'При создании пользоваетеля возникла ошибка'}
         
+        new_link = dict()
+        if pan1:
+            new_link['panel_2'] = res["subscription_url"]
+        else:
+            new_link['panel_1'] = res["subscription_url"]
+        
+        logger.debug(f"Данные для бд {'='*15} {new_link} : {username}")
+
+        # Добавляем в бд запись о новой ссылке
+        await accept_panel(new_link=new_link, username=username)
+
+    except ValueError:
+        logger.error('Не получилось получить вторую ссылку')
+    except Exception as e:
+        logger.error(f'Возникла ошибка: {e}')
     
