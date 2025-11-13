@@ -1,7 +1,6 @@
 from yookassa import Payment, Configuration
 import uuid
 import json
-import logging
 from config_data.config import settings
 from logger_setup import logger
 

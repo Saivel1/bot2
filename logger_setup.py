@@ -5,6 +5,7 @@ import sys
 logger = logging.getLogger(__name__)
 level = logging.INFO
 logger.setLevel(level)  # <<— ВАЖНО: иначе DEBUG не увидишь
+logger.propagate = False
 
 formatter_1 = logging.Formatter(
     fmt='[%(asctime)s] #%(levelname)-8s %(filename)s:%(lineno)d - %(name)s:%(funcName)s - %(message)s'

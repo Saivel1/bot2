@@ -51,7 +51,7 @@ async def lifespan(app: Litestar):
     #     await conn.run_sync(Base.metadata.create_all)
     global redis_client
     redis_client = await init_redis()
-    await redis_client.ping()  #type: ingore
+    await redis_client.ping()  # type: ignore
     print("✓ Redis connected")
 
 
@@ -138,21 +138,20 @@ async def webhook_marz(request: Request) -> dict:
 
     username = data[0]['username']
     action   = data[0]['action']
-    cache_key = f"marzban:create:{username}"
+    cache_key = f"marzban:{username}:{action}"
 
     exist = await redis_client.exists(cache_key) #type: ignore
-    logger.info(exist)
+    logger.debug(exist)
     if exist: #type: ignore
         logger.info(f'Дублирование операции для {username}')
         return {'msg': 'operation for user been'}
 
-    logger.info(action)
-    if action == 'user_created':
-        await redis_client.set(cache_key, '1', ex=20) #type: ignore
-        logger.info('Добавлен в Redis')
+    logger.debug(action)
+    await redis_client.set(cache_key, "1", ex=20) #type: ignore
+    logger.info('Добавлен в Redis')
+
 
     logger.debug(f'Пришёл запрос от Marzban {data_str[:20]}')
-    logger.info(data)
     pan = data[0]["user"]["subscription_url"]
     logger.debug(f'Пришёл запрос от Marzban с панели: {pan[:15]}')
 
