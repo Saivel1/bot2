@@ -7,7 +7,7 @@ redis_client: Optional[Redis] = None
 
 async def init_redis() -> Redis:
     """Инициализация Redis подключения"""
-    return await Redis(
+    return Redis(
         host=settings.REDIS_HOST,
         port=settings.REDIS_PORT,
         password=settings.REDIS_PASS,
