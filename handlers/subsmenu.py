@@ -7,6 +7,8 @@ from logger_setup import logger
 from marz.backend import marzban_client
 from misc.utils import to_link, get_sub_url, get_user_in_links, get_user_cached
 from config_data.config import settings as s
+import app.redis_client as redis_module
+
 
 
 text_pattern = """
@@ -55,14 +57,32 @@ async def main_subs(callback: CallbackQuery):
         parse_mode="MARKDOWN"
     )
 
+async def is_duplicate_callback(callback_id: str) -> bool:
+    """Проверяет, обрабатывали ли мы уже этот callback"""
+    key = f"callback_processed:{callback_id}"
+    redis = redis_module.redis_client
+
+    
+    # Если ключ существует - это дубликат
+    if await redis.exists(key): #type: ignore
+        return True
+    
+    # Сохраняем на 60 секунд (callback_id живёт недолго)
+    await redis.setex(key, 60, "1") #type: ignore
+    return False
+
 
 @dp.callback_query(F.data.startswith("sub_"))
 async def process_sub(callback: CallbackQuery):
+    if await is_duplicate_callback(callback.id):
+        logger.warning(f"⚠️ Дубликат callback {callback.id} от {callback.from_user.id}")
+        await callback.answer()  # просто отвечаем, чтобы убрать "часики"
+        return
+    
+    # ✅ Сразу отвечаем
     await callback.answer()
-    sub_id = callback.data.replace("sub_", "") #type: ignore
-    user_id = str(callback.from_user.id)
-    logger.debug(f"ID : {user_id} | Нажал {callback.data}")
 
+    user_id = str(callback.from_user.id)
 
     uuid = await get_user_in_links(user_id=user_id)
     if uuid is None:
@@ -70,6 +90,12 @@ async def process_sub(callback: CallbackQuery):
             text="❌ Подписка не найдена",
             reply_markup=BackButton.back_subs()
         ) 
+
+    await callback.answer()
+
+    sub_id = callback.data.replace("sub_", "") #type: ignore
+    logger.debug(f"ID : {user_id} | Нажал {callback.data}")
+    
 
     sub_url = f"{s.IN_SUB_LINK + uuid.uuid}" #type: ignore
     res = await get_user_cached(user_id=user_id)
