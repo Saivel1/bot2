@@ -13,7 +13,7 @@ from marz.backend import MarzbanClient
 from config_data.config import settings
 import json
 from typing import Optional
-from app.redis_client import redis_client
+import app.redis_client as redis_module
 
 MONTH = 30
 
@@ -48,51 +48,23 @@ async def to_link(lst_data: dict):
 
 async def get_user_cached(user_id: str, ttl: int = 300) -> dict | None:
     """Получить пользователя с кэшированием на 5 минут"""
-    cache_key = f"marzban:user:{user_id}"
-
-    if redis_client is None:
+    if redis_module.redis_client is None:
         logger.error("❌ redis_client is None!")
-        return None
+        return await marzban_client.get_user(user_id)
     
-    try:
-        cached = await redis_client.get(cache_key)
-        logger.debug(f"📦 Результат из Redis: {cached}")
-    except Exception as e:
-        logger.error(f"❌ Ошибка Redis GET: {e}")
-        cached = None
+    cache_key = f"marzban:user:{user_id}"
+    
+    cached = await redis_module.redis_client.get(cache_key)
     
     if cached:
-        logger.info(f"✓ Cache HIT для {user_id}")
-        try:
-            return json.loads(cached)
-        except json.JSONDecodeError as e:
-            logger.error(f"❌ Ошибка парсинга JSON: {e}")
-            await redis_client.delete(cache_key)  # Удаляем битый кэш
+        logger.debug(f"✓ Cache hit для {user_id}")
+        return json.loads(cached)
     
-    # Если нет в кэше - запрос к Marzban
-    logger.debug(f"Cache miss для {user_id}, запрос к API")
-    try:
-        res = await marzban_client.get_user(user_id)
-        logger.debug(f"📥 Ответ от Marzban: {type(res)} - {res}")
-    except Exception as e:
-        logger.error(f"❌ Ошибка запроса к Marzban: {e}")
-        return None
+    logger.debug(f"✗ Cache miss для {user_id}")
+    res = await marzban_client.get_user(user_id)
     
-    try:
-        json_data = json.dumps(res)
-        logger.debug(f"✓ JSON сериализация OK, длина: {len(json_data)}")
-    except (TypeError, ValueError) as e:
-        logger.error(f"❌ Не могу сериализовать в JSON: {e}")
-        logger.error(f"Тип данных: {type(res)}")
-        return res  # Возвращаем без кэша
-    
-    try:
-        await redis_client.set(cache_key, json_data, ex=ttl)
-        logger.info(f"✓ Сохранено в Redis: {cache_key}")
-    except Exception as e:
-        logger.error(f"❌ Ошибка Redis SET: {e}")
-    
-    return res
+    if res:
+        await redis_module.redis_client.set(cache_key, json.dumps(res), ex=ttl)
 
 
 async def get_user(user_id) -> UserOrm | None:
