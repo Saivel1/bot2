@@ -42,14 +42,23 @@ async def to_link(lst_data: dict):
     )
 
 
-async def get_user(user_id):
+async def get_user(user_id) -> UserOrm | None:
+    '''
+    Эта функция принимает на вход user_id который может быть и строкой 
+    и текстом. И возвращает запись из БД users с переданным user_id или None
+    '''
     user_id = str(user_id)
     async with async_session() as session:
         user_repo = BaseRepository(session=session, model=UserOrm)
         res = await user_repo.get_one(user_id=user_id)
         return res
 
-async def get_user_in_links(user_id):
+
+async def get_user_in_links(user_id) -> LinksOrm | None:
+    '''
+    Эта функция принимает на вход user_id который может быть и строкой 
+    и текстом. И возвращает запись из БД links с переданным user_id или None
+    '''
     user_id = str(user_id)
     async with async_session() as session:
         user_repo = BaseRepository(session=session, model=LinksOrm)
@@ -60,6 +69,11 @@ async def get_user_in_links(user_id):
     
 
 async def get_links_of_panels(uuid: str) -> list | None:
+    '''
+    Эта функция принимает на вход uuid строку. 
+    И возвращает списоков подписок для обеих панелей, 
+    которые есть в таблице links для этого uuid.
+    '''
     async with async_session() as session:
         user_repo = BaseRepository(session=session, model=LinksOrm)
         res = await user_repo.get_one(uuid=uuid)

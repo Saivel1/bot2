@@ -37,6 +37,11 @@ class Settings(BaseSettings):
     DB_PASSWORD: str
     DB_NAME: str
 
+
+    REDIS_HOST: str
+    REDIS_PORT: int
+    REDIS_PASS: str
+
     @property
     def DATABASE_URL(self) -> str:
         """Асинхронный URL для asyncpg"""

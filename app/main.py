@@ -1,12 +1,15 @@
 from aiogram import types
 from bot_instance import bot, dp
 from config_data.config import settings
+from keyboards.deps import BackButton
 from logger_setup import logger
 from db.database import async_session
 from db.db_models import PaymentData, LinksOrm, PanelQueue
 from repositories.base import BaseRepository
-from misc.utils import get_links_of_panels
-from marz.backend import MarzbanClient
+from misc.utils import get_links_of_panels, get_user, modify_user, new_date
+from marz.backend import MarzbanClient, marzban_client
+from app.redis_client import init_redis
+from redis.asyncio import Redis
 
 from litestar import Litestar, post, get, Request
 from litestar.response import Redirect,Template
@@ -19,6 +22,7 @@ from pathlib import Path
 import json
 import aiohttp, asyncio
 from contextlib import asynccontextmanager
+import time
 
 
 
@@ -29,7 +33,7 @@ import handlers.subsmenu
 
 
 BASE_DIR = Path(__file__).parent
-
+redis_client: Redis | None = None
 
 # Lifespan для управления webhook
 @asynccontextmanager
@@ -45,8 +49,17 @@ async def lifespan(app: Litestar):
     # async with engine.begin() as conn:
     #     await conn.run_sync(Base.metadata.drop_all)
     #     await conn.run_sync(Base.metadata.create_all)
+    global redis_client
+    redis_client = await init_redis()
+    await redis_client.ping()  #type: ingore
+    print("✓ Redis connected")
+
 
     yield
+
+    if redis_client:
+        await redis_client.aclose()
+        print("✓ Redis disconnected")
 
     await bot.session.close()
     await bot.delete_webhook()
@@ -115,11 +128,23 @@ async def accept_panel(new_link: dict, username: str):
         raise ValueError
 
 
+creat_queue = dict()
+
 # Marzban webhook
 @post("/marzban")
 async def webhook_marz(request: Request) -> dict:
     data = await request.json()
     data_str = json.dumps(data, ensure_ascii=False)
+
+    username = data[0]['username']
+    current_time = time.time()
+
+
+    if username in creat_queue:
+        return {"msg": "already exist"}
+
+    creat_queue['username'] = time.time()
+
     logger.debug(f'Пришёл запрос от Marzban {data_str[:20]}')
     logger.info(data)
     pan = data[0]["user"]["subscription_url"]
@@ -137,7 +162,6 @@ async def webhook_marz(request: Request) -> dict:
         url_for_create = settings.DNS1_URL
 
 
-    username = data[0]['username']
     inbounds = data[0]['user']['inbounds']['vless']
     id =       data[0]['user']['proxies']['vless']['id']
     expire =   data[0]['user']['expire']
@@ -258,20 +282,84 @@ async def process_sub_info(uuid: str) -> Redirect:
     raise ServiceUnavailableException(detail="All panels unavailable")
 
 
+@post("/pay")
+async def yoo_kassa(request: Request) -> dict:
+    data = await request.json()
+    event = data.get('event')
+    order_id = data.get('object', {}).get("id", {})
+    
+    if order_id == {}:
+        logger.warning(f'{order_id} Response: {data}')
+        return {"status": "ne-ok"}
+    
+    obj = await change_status(order_id=order_id, status=event)
+    if not obj:
+        logger.info(f"Order: {order_id} was canceled or TimeOut")
+        return {"response": "Order was canceled"}
+    
+    obj_data = data.get("object", {})
+    pay_id, pay_am = obj_data.get('id'), obj_data.get('amount')
+    logger.info(f'{pay_id} | {pay_am}')
+    
+    user_marz = await marzban_client.get_user(user_id=obj.user_id)
+    user = await get_user(user_id=obj.user_id)
+    expire = calculate_expire(old_expire=user_marz['expire']) #type: ignore
+    new_expire = new_date(expire=expire, amount=pay_am['value'])
+    
+    try:
+        await modify_user(username=obj.user_id) #, expire=new_expire)
+        logger.info(f"Для пользователя {obj.user_id} оплата и обработка прошли успешно.")
+        
+        await bot.send_message(
+            chat_id=obj.user_id, #type: ignore
+            text=f"Оплата прошла успешно на сумму: {obj.amount}", #type: ignore
+            reply_markup=BackButton.back_start()
+        )
+        
+        await bot.send_message(
+            chat_id=482410857,
+            text=f"Пользователь {obj.user_id} заплатил {obj.amount}"
+        )
+    except Exception as e:
+        logger.warning(e)
+        await bot.send_message(
+            text="Возникла ошибка, напиши в поддержку /help",
+            chat_id=obj.user_id
+        )
+    
+    return {"ok": True}
+
+
 # Вспомогательная функция (твоя существующая логика)
-async def change_status(order_id: str, status: str):
+async def change_status(order_id: str, status: str) -> PaymentData | None:
+    '''
+    Это функция принимает status: str, который должен быть
+    smth.succeeded | smth.canceled | smth.waiting_for_capture
+
+    В status обязательно должна быть точка-разделитель, по ней
+    делится на smth - который не имеет значения, и смысловую часть после точки
+
+    1. Canceled - Возвращает -- None -- и удаляет запись из бд с order_id
+    2. waiting_for_capture - Неизвестный ответ возвращает -- None --
+    3. Succeeded - меняет статус у записи с order_id и возвращает объект -- ORM --
+    '''
+
     st = status.split(".")[1]
+    if st == 'waiting_for_capture':
+        return None
     async with async_session() as session:
         repo = BaseRepository(session=session, model=PaymentData)
-        res = await repo.update_one({
-            "status": st
-        }, payment_id=order_id)
-        if st == 'canceled':
-            await repo.delete_where(payment_id=order_id)
-            return False
-        if st == 'waiting_for_capture':
+        if st == 'succeeded':
+            res = await repo.update_one({
+                "status": st
+            }, payment_id=order_id)
+            logger.debug(f'Ответ из БД после обновления {res}')
+            return res
+        elif st == 'canceled':
+            res = await repo.delete_where(payment_id=order_id)
+            logger.debug(f'Ответ из БД после удаления {res}')
             return None
-        return res
+        
 
 
 # Создание приложения
