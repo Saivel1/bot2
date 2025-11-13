@@ -6,7 +6,7 @@ from logger_setup import logger
 from db.database import async_session
 from db.db_models import PaymentData, LinksOrm, PanelQueue
 from repositories.base import BaseRepository
-from misc.utils import get_links_of_panels, get_user, modify_user, new_date
+from misc.utils import get_links_of_panels, get_user, modify_user, new_date, create_user_sync
 from marz.backend import MarzbanClient, marzban_client
 from app.redis_client import init_redis
 from redis.asyncio import Redis
@@ -52,14 +52,15 @@ async def lifespan(app: Litestar):
     global redis_client
     redis_client = await init_redis()
     await redis_client.ping()  # type: ignore
-    print("✓ Redis connected")
+    logger.info("Redis connected")
 
 
     yield
 
+
     if redis_client:
         await redis_client.aclose()
-        print("✓ Redis disconnected")
+        logger.info("Redis disconnected")
 
     await bot.session.close()
     await bot.delete_webhook()
@@ -152,67 +153,14 @@ async def webhook_marz(request: Request) -> dict:
 
 
     logger.debug(f'Пришёл запрос от Marzban {data_str[:20]}')
-    pan = data[0]["user"]["subscription_url"]
-    logger.debug(f'Пришёл запрос от Marzban с панели: {pan[:15]}')
-
-    pan1 = False
-    url_for_create = ""
-
-    if pan.find("dns1") != -1: # Если в панели есть dns1 - значит это первая панель
-        backend = MarzbanClient(settings.DNS2_URL)
-        pan1 = True
-        url_for_create = settings.DNS2_URL
+    if action == 'user_created':
+        await create_user_sync(data=data)
+    elif action == 'user_updated':
+        pass
+    elif action == 'user_expired':
+        print('Отправить сообщение юзеру')
     else:
-        backend = MarzbanClient(settings.DNS1_URL)
-        url_for_create = settings.DNS1_URL
-
-
-    inbounds = data[0]['user']['inbounds']['vless']
-    id =       data[0]['user']['proxies']['vless']['id']
-    expire =   data[0]['user']['expire']
-
-    logger.debug(f'Данные пользователя: username --- {username} --- inbounds {inbounds} --- id {id}')
-    try:
-        res = await backend.create_user_options(username=username, id=id, inbounds=inbounds, expire=expire)
-
-        if res is None:
-            return {"error": 'При создании пользоваетеля возникла ошибка'}
-        
-        if res['status'] == 409:
-            return {"msg": "тут нечего делать"}
-            
-        logger.debug(f'Создан пользователь: {res["username"]}') 
-
-        new_link = dict()
-        if pan1:
-            new_link['panel_2'] = res["subscription_url"]
-        else:
-            new_link['panel_1'] = res["subscription_url"]
-        
-        logger.debug(f"Данные для бд {'='*15} {new_link} : {username}")
-        # Добавляем в бд запись о новой ссылке
-        await accept_panel(new_link=new_link, username=username)
-
-    except ValueError:
-        logger.error('Не получилось получить вторую ссылку')
-
-    except Exception as e:
-        logger.error("Ошибка с Марзбан")
-        async with async_session() as session:
-            repo = BaseRepository(session=session, model=PanelQueue)
-            if not isinstance(expire, int):
-                expire = int(expire) if expire else 0
-
-            if not isinstance(inbounds, list):
-                inbounds = inbounds if isinstance(inbounds, list) else [inbounds] if inbounds else []
-
-            await repo.create({
-                "uuid": id,
-                "panel": url_for_create,
-                "username": username,
-                "expire": expire,
-                "inbounds": inbounds
-            })
+        logger.info(data)
 
     return {"ok": True}
 

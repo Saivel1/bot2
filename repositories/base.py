@@ -7,6 +7,8 @@ from sqlalchemy.orm import DeclarativeBase
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.sql import Select
 
+from logger_setup import logger
+
 T = TypeVar("T", bound=DeclarativeBase)  # любая декларативная модель
 
 
@@ -173,12 +175,10 @@ class BaseRepository(Generic[T]):
         Обновляет одну запись, найденную по фильтрам.
         Возвращает обновлённый объект или None, если не найдено.
         """
-        print(f"Получил словарь {data}")
-        print(f"Получил фильтры {filters}")
+
         obj = await self.get_one(**filters)
         if not obj:
             return None
-        print(f"Получил словарь {data}")
         for k, v in data.items():
             setattr(obj, k, v)
         
@@ -192,7 +192,7 @@ class BaseRepository(Generic[T]):
         """
         stmt = update(self.model).values(**data).execution_options(synchronize_session="fetch")
         stmt = self._apply_filters(stmt, **filters) # type:ignore
-        print(f"Получил словарь {data}")
+        logger.debug(f"Получил словарь {data}")
 
         res = await self.session.execute(stmt)
         await self.session.commit()

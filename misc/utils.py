@@ -2,13 +2,15 @@ from urllib.parse import unquote
 from dataclasses import dataclass
 from repositories.base import BaseRepository
 from db.database import async_session
-from db.db_models import UserOrm, LinksOrm
+from db.db_models import UserOrm, LinksOrm, PanelQueue
 from datetime import datetime
 from marz.backend import marzban_client
 from misc.bot_setup import add_monthes
 from datetime import timedelta
 from logger_setup import logger
 import uuid
+from marz.backend import MarzbanClient
+from config_data.config import settings
 
 MONTH = 30
 
@@ -167,3 +169,92 @@ async def get_sub_url(user_id):
         res = await repo.get_one(user_id=user_id)
     logger.info(res)
     return res
+
+
+async def create_user_sync(data):
+    '''
+    Эта функция создаёт пользователя в Marzban принимая на вход
+    данные из запроса от самого Marzban и перенаправляя его в другую 
+    панель
+    '''
+
+    async def accept_panel(new_link: dict, username: str):
+        logger.debug("Зашли в редактор БД")
+        try:
+            async with async_session() as session:
+                repo = BaseRepository(session=session, model=LinksOrm)
+                logger.debug(f'{"="*15} Репо создан {"="*15}')
+                base_res = await repo.update_where(
+                        data=new_link, 
+                        user_id=username)
+                logger.debug(f'Новая запись {base_res}')
+        except Exception as e:
+            logger.error(f'Ошибка при добавленни ссылки в БД {e}')
+            raise ValueError
+    
+    username = data[0]['username']
+
+
+    pan = data[0]["user"]["subscription_url"]
+    logger.debug(f'Пришёл запрос от Marzban с панели: {pan[:15]}')
+
+    pan1 = False
+    url_for_create = ""
+
+    if pan.find("dns1") != -1: # Если в панели есть dns1 - значит это первая панель
+        backend = MarzbanClient(settings.DNS2_URL)
+        pan1 = True
+        url_for_create = settings.DNS2_URL
+    else:
+        backend = MarzbanClient(settings.DNS1_URL)
+        url_for_create = settings.DNS1_URL
+
+
+    inbounds = data[0]['user']['inbounds']['vless']
+    id =       data[0]['user']['proxies']['vless']['id']
+    expire =   data[0]['user']['expire']
+
+    logger.debug(f'Данные пользователя: username --- {username} --- inbounds {inbounds} --- id {id}')
+    try:
+        res = await backend.create_user_options(username=username, id=id, inbounds=inbounds, expire=expire)
+
+        if res is None:
+            return {"error": 'При создании пользоваетеля возникла ошибка'}
+        
+        if res['status'] == 409:
+            return {"msg": "тут нечего делать"}
+            
+        logger.debug(f'Создан пользователь: {res["username"]}') 
+
+        new_link = dict()
+        if pan1:
+            new_link['panel_2'] = res["subscription_url"]
+        else:
+            new_link['panel_1'] = res["subscription_url"]
+        
+        logger.debug(f"Данные для бд {'='*15} {new_link} : {username}")
+        # Добавляем в бд запись о новой ссылке
+        await accept_panel(new_link=new_link, username=username)
+
+    except ValueError:
+        logger.error('Не получилось получить вторую ссылку')
+
+    except Exception as e:
+        logger.error("Ошибка с Марзбан")
+        async with async_session() as session:
+            repo = BaseRepository(session=session, model=PanelQueue)
+            if not isinstance(expire, int):
+                expire = int(expire) if expire else 0
+
+            if not isinstance(inbounds, list):
+                inbounds = inbounds if isinstance(inbounds, list) else [inbounds] if inbounds else []
+
+            await repo.create({
+                "uuid": id,
+                "panel": url_for_create,
+                "username": username,
+                "expire": expire,
+                "inbounds": inbounds
+            })
+        
+    
