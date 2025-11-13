@@ -138,8 +138,9 @@ async def webhook_marz(request: Request) -> dict:
 
     username = data[0]['username']
     action   = data[0]['action']
+    cache_key = f"marzban:create:{username}"
 
-    exist = await redis_client.exists(username)#type: ignore
+    exist = await redis_client.exists(cache_key) #type: ignore
     logger.info(exist)
     if exist: #type: ignore
         logger.info(f'Дублирование операции для {username}')
@@ -147,7 +148,7 @@ async def webhook_marz(request: Request) -> dict:
 
     logger.info(action)
     if action == 'user_created':
-        await redis_client.set("marzban:create", username, ex=20) #type: ignore
+        await redis_client.set(cache_key, '1', ex=20) #type: ignore
         logger.info('Добавлен в Redis')
 
     logger.debug(f'Пришёл запрос от Marzban {data_str[:20]}')
