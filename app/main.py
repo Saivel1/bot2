@@ -10,6 +10,9 @@ from misc.utils import get_links_of_panels, get_user, modify_user, new_date, cre
 from marz.backend import marzban_client
 from app.redis_client import init_redis
 from redis.asyncio import Redis
+import app.redis_client as redis_module 
+from app.redis_client import close_redis
+
 
 from litestar import Litestar, post, get, Request
 from litestar.response import Redirect,Template
@@ -32,7 +35,6 @@ import handlers.subsmenu
 
 
 BASE_DIR = Path(__file__).parent
-redis_client: Redis | None = None
 
 # Lifespan для управления webhook
 @asynccontextmanager
@@ -50,8 +52,6 @@ async def lifespan(app: Litestar):
     #     await conn.run_sync(Base.metadata.create_all)
 
     global redis_client
-    import app.redis_client as redis_module
-    from app.redis_client import close_redis
 
     redis_module.redis_client = await init_redis()
     await redis_module.redis_client.ping() #type: ignore
