@@ -11,6 +11,9 @@ from logger_setup import logger
 import uuid
 from marz.backend import MarzbanClient
 from config_data.config import settings
+import json
+from typing import Optional
+from app.main import redis_client
 
 MONTH = 30
 
@@ -42,6 +45,26 @@ async def to_link(lst_data: dict):
         links=links,
         titles=titles
     )
+
+async def get_user_cached(user_id: str, ttl: int = 300) -> dict | None:
+    """Получить пользователя с кэшированием на 5 минут"""
+    cache_key = f"marzban:user:{user_id}"
+    
+    # Пытаемся достать из кэша
+    cached = await redis_client.get(cache_key) #type: ignore
+    
+    if cached:
+        logger.debug(f"Cache hit для {user_id}")
+        return json.loads(cached)
+    
+    # Если нет в кэше - запрос к Marzban
+    logger.debug(f"Cache miss для {user_id}, запрос к API")
+    res = await marzban_client.get_user(user_id)
+    
+    # Сохраняем в кэш
+    await redis_client.set(cache_key, json.dumps(res), ex=ttl) #type: ignore
+    
+    return res
 
 
 async def get_user(user_id) -> UserOrm | None:

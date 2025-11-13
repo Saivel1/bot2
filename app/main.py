@@ -4,10 +4,10 @@ from config_data.config import settings
 from keyboards.deps import BackButton
 from logger_setup import logger
 from db.database import async_session
-from db.db_models import PaymentData, LinksOrm, PanelQueue
+from db.db_models import PaymentData, LinksOrm
 from repositories.base import BaseRepository
 from misc.utils import get_links_of_panels, get_user, modify_user, new_date, create_user_sync, update_user_sync
-from marz.backend import MarzbanClient, marzban_client
+from marz.backend import marzban_client
 from app.redis_client import init_redis
 from redis.asyncio import Redis
 
@@ -22,7 +22,6 @@ from pathlib import Path
 import json
 import aiohttp, asyncio
 from contextlib import asynccontextmanager
-import time
 
 
 
@@ -129,7 +128,6 @@ async def accept_panel(new_link: dict, username: str):
         raise ValueError
 
 
-
 # Marzban webhook
 @post("/marzban")
 async def webhook_marz(request: Request) -> dict:
@@ -140,15 +138,23 @@ async def webhook_marz(request: Request) -> dict:
     action   = data[0]['action']
     cache_key = f"marzban:{username}:{action}"
 
+    if action == "reached_days_left":
+        ttl = 3600  # 1 час - чтобы не спамить каждое обновление
+    elif action == "user_expired":
+        ttl = 300   # 5 минут
+    else:
+        ttl = 20    # 20 секунд для остальных
+
     exist = await redis_client.exists(cache_key) #type: ignore
     logger.debug(exist)
+
     if exist: #type: ignore
         logger.info(f'Дублирование операции для {username}')
         return {'msg': 'operation for user been'}
 
     logger.debug(action)
-    await redis_client.set(cache_key, "1", ex=20) #type: ignore
-    logger.info('Добавлен в Redis')
+    await redis_client.set(cache_key, "1", ex=ttl) #type: ignore
+    logger.debug('Добавлен в Redis')
 
 
     logger.debug(f'Пришёл запрос от Marzban {data_str[:20]}')

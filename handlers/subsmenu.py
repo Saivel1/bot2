@@ -5,9 +5,10 @@ from keyboards.deps import BackButton
 from aiogram.types import CallbackQuery
 from logger_setup import logger
 from marz.backend import marzban_client
-from misc.utils import to_link, get_sub_url, get_user_in_links
+from misc.utils import to_link, get_sub_url, get_user_in_links, get_user_cached
 from config_data.config import settings as s
 import aiohttp
+from app.main import redis_client
 
 text_pattern = """
 🔐 **Ваши подписки IV VPN**
@@ -34,9 +35,16 @@ async def main_subs(callback: CallbackQuery):
     text_reponse = text_pattern
     text_reponse += "\n" + f"`{s.IN_SUB_LINK}{sub_link}`" #type: ignore
 
-    res = await marzban_client.get_user(user_id)
-    data = await to_link(res) #type: ignore
+    res = await get_user_cached(user_id=user_id)
 
+    if res is None:
+        await callback.message.edit_text( #type: ignore
+            text="❌ Возникла ошибка при выдачи подписки попробуйте позже.",
+            reply_markup=BackButton.back_start()
+        )
+        return
+    
+    data = await to_link(res) #type: ignore
 
     await callback.message.edit_text( #type: ignore
         text=text_reponse,
@@ -52,16 +60,23 @@ async def process_sub(callback: CallbackQuery):
     logger.debug(f"ID : {user_id} | Нажал {callback.data}")
 
 
+
     uuid = await get_user_in_links(user_id=user_id)
     if uuid is None:
         await callback.message.edit_text( #type: ignore
             text="❌ Подписка не найдена",
             reply_markup=BackButton.back_subs()
         ) 
+
     sub_url = f"{s.IN_SUB_LINK + uuid.uuid}" #type: ignore
-    async with aiohttp.ClientSession() as session:
-        req = await session.get(url=f'{sub_url}/info')
-        res = await req.json()
+    res = await get_user_cached(user_id=user_id)
+
+    if res is None:
+        await callback.message.edit_text( #type: ignore
+            text="❌ Возникла ошибка при выдачи подписки попробуйте позже.",
+            reply_markup=BackButton.back_start()
+        )
+        return
 
        
     data = await to_link(res) #type: ignore
