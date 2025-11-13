@@ -39,7 +39,7 @@ async def main_subs(callback: CallbackQuery):
     logger.debug(f"ID : {user_id} | Получил Паттерн и uuid {sub_link}")
 
     res = await get_user_cached(user_id=user_id)
-    
+
     if res is None:
         await callback.message.edit_text( #type: ignore
             text="❌ Возникла ошибка при выдачи подписки попробуйте позже.",
@@ -61,7 +61,7 @@ async def process_sub(callback: CallbackQuery):
     sub_id = callback.data.replace("sub_", "") #type: ignore
     user_id = str(callback.from_user.id)
     logger.debug(f"ID : {user_id} | Нажал {callback.data}")
-
+    await callback.answer()
 
 
     uuid = await get_user_in_links(user_id=user_id)
