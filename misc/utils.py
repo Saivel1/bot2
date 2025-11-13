@@ -66,6 +66,8 @@ async def get_user_cached(user_id: str, ttl: int = 300) -> dict | None:
     if res:
         await redis_module.redis_client.set(cache_key, json.dumps(res), ex=ttl)
 
+    return res
+
 
 async def get_user(user_id) -> UserOrm | None:
     '''
