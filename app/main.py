@@ -40,7 +40,7 @@ BASE_DIR = Path(__file__).parent
 @asynccontextmanager
 async def lifespan(app: Litestar):
     """Lifecycle events для установки/удаления webhook"""
-    await bot.delete_webhook(drop_pending_updates=True)
+    await bot.delete_webhook()
     logger.debug("Вебхук удалён")
     await bot.set_webhook(
         url=settings.WEBHOOK_URL,
@@ -163,10 +163,13 @@ async def webhook_marz(request: Request) -> dict:
     logger.debug(f'Пришёл запрос от Marzban {data_str[:20]}')
     if action == 'user_created':
         await create_user_sync(data=data)
+
     elif action == 'user_updated':
         await update_user_sync(data=data)
+
     elif action == 'user_expired':
         print('Отправить сообщение юзеру')
+        
     elif action == 'reached_days_left':
         print('Отправить сообщение юзеру День остался')
 
@@ -207,40 +210,6 @@ async def process_sub(uuid: str) -> Redirect:
     # Все недоступны
     raise ServiceUnavailableException(detail="All panels unavailable")
 
-
-# Subscription redirect
-@get("/sub/{uuid:str}/info")
-async def process_sub_info(uuid: str) -> Redirect:
-    """Проверяем все панели параллельно"""
-    
-    links = await get_links_of_panels(uuid=uuid)
-    logger.debug(f'Ссылки {links}')
-    
-    if not links:
-        raise NotFoundException(detail="Subscription not found")
-    
-    async def check_panel(link: str) -> tuple[bool, str]:
-        """Проверить доступность панели"""
-        try:
-            timeout = aiohttp.ClientTimeout(total=3.0)
-            async with aiohttp.ClientSession(timeout=timeout) as session:
-                response = await session.get(url=link)
-                return (response.status in (200, 201), link)
-        except Exception:
-            return (False, link)
-    
-    # Проверяем все панели параллельно
-    results = await asyncio.gather(*[check_panel(link) for link in links])
-    
-    # Выбираем первую рабочую
-    for is_available, link in results:
-        link = link + "/info"
-        if is_available:
-            logger.debug(f"Подписка отдана: {link}")
-            return Redirect(path=link)
-    logger.warning("Панели недоступны")
-    # Все недоступны
-    raise ServiceUnavailableException(detail="All panels unavailable")
 
 
 @post("/pay")
@@ -331,8 +300,7 @@ app = Litestar(
         webhook,
         webhook_marz,
         process_sub,
-        vpn_guide,
-        process_sub_info
+        vpn_guide
     ],
     lifespan=[lifespan],
     debug=False,

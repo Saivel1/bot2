@@ -79,7 +79,6 @@ async def process_sub(callback: CallbackQuery):
         await callback.answer()  # просто отвечаем, чтобы убрать "часики"
         return
     
-    # ✅ Сразу отвечаем
     await callback.answer()
 
     user_id = str(callback.from_user.id)

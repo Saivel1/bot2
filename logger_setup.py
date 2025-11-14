@@ -3,7 +3,7 @@ import sys
 
 
 logger = logging.getLogger(__name__)
-level = logging.DEBUG
+level = logging.INFO
 logger.setLevel(level)  # <<— ВАЖНО: иначе DEBUG не увидишь
 logger.propagate = False
 
