@@ -85,7 +85,7 @@ class MarzbanClient:
             logger.error(f"Исключение при получении пользователя {user_id}: {e}")
             return None
     
-    #@retry_on_failure(max_attempts=3, delay=2)
+    @retry_on_failure(max_attempts=3, delay=2)
     async def modify_user(self, user_id: str, expire: int):
         """Изменить данные пользователя"""
         try:
@@ -94,10 +94,12 @@ class MarzbanClient:
                 "accept": "application/json",
                 "Authorization": f"Bearer {token}"
             }
+
+            connector = aiohttp.TCPConnector(ssl=False)
             
             data = {"expire": expire}
             
-            async with aiohttp.ClientSession(timeout=self.timeout) as session:
+            async with aiohttp.ClientSession(timeout=self.timeout, connector=connector) as session:
                 async with session.put(
                     url=f"{self.base_url}/api/user/{user_id}",
                     headers=headers,
