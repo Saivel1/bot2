@@ -45,13 +45,13 @@ class MarzbanClient:
             "username": self.user,
             "password": self.password
         }
-        ssl_context = ssl.create_default_context()
-        ssl_context.check_hostname = False
-        ssl_context.verify_mode = ssl.CERT_NONE
+        # ssl_context = ssl.create_default_context()
+        # ssl_context.check_hostname = False
+        # ssl_context.verify_mode = ssl.CERT_NONE
         
-        connector = aiohttp.TCPConnector(ssl=ssl_context)
+        # connector = aiohttp.TCPConnector(ssl=ssl_context)
         
-        async with aiohttp.ClientSession(timeout=self.timeout, connector=connector) as session:
+        async with aiohttp.ClientSession(timeout=self.timeout) as session:
             async with session.post(
                 url=f"{self.base_url}/api/admin/token",
                 data=data
