@@ -44,8 +44,9 @@ class MarzbanClient:
             "username": self.user,
             "password": self.password
         }
+        connector = aiohttp.TCPConnector(ssl=False)
         
-        async with aiohttp.ClientSession(timeout=self.timeout) as session:
+        async with aiohttp.ClientSession(timeout=self.timeout, connector=connector) as session:
             async with session.post(
                 url=f"{self.base_url}/api/admin/token",
                 data=data
