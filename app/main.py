@@ -143,11 +143,11 @@ async def webhook_marz(request: Request) -> dict:
     cache_key = f"marzban:{username}:{action}"
 
     if action == "reached_days_left":
-        ttl = 3600  # 1 час - чтобы не спамить каждое обновление
+        ttl = 3600  
     elif action == "user_expired":
-        ttl = 300   # 5 минут
+        ttl = 300   
     else:
-        ttl = 20    # 20 секунд для остальных
+        ttl = 60    
 
     logger.debug(f'Пришли данные до Редиса {username} | {action} | {cache_key}')
     exist = await redis_module.redis_client.exists(cache_key) #type: ignore
