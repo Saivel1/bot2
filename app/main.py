@@ -137,7 +137,6 @@ async def webhook_marz(request: Request) -> dict:
     data = await request.json()
     logger.debug(data)
     data_str = json.dumps(data, ensure_ascii=False)
-    redis_client = redis_module.redis_client
 
     username = data[0]['username']
     action   = data[0]['action']
@@ -151,7 +150,7 @@ async def webhook_marz(request: Request) -> dict:
         ttl = 20    # 20 секунд для остальных
 
     logger.debug(f'Пришли данные до Редиса {username} | {action} | {cache_key}')
-    exist = await redis_client.exists(cache_key) #type: ignore
+    exist = await redis_module.redis_client.exists(cache_key) #type: ignore
     logger.debug(exist)
 
     if exist: #type: ignore
@@ -159,7 +158,7 @@ async def webhook_marz(request: Request) -> dict:
         return {'msg': 'operation for user been'}
 
     logger.debug(action)
-    await redis_client.set(cache_key, "1", ex=ttl) #type: ignore
+    await redis_module.redis_client.set(cache_key, "1", ex=ttl) #type: ignore
     logger.debug('Добавлен в Redis')
 
 
