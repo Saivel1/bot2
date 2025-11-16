@@ -135,6 +135,7 @@ async def accept_panel(new_link: dict, username: str):
 @post("/marzban")
 async def webhook_marz(request: Request) -> dict:
     data = await request.json()
+    logger.debug(data)
     data_str = json.dumps(data, ensure_ascii=False)
 
     username = data[0]['username']
