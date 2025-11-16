@@ -70,7 +70,8 @@ class MarzbanClient:
             async with aiohttp.ClientSession(timeout=self.timeout) as session:
                 async with session.get(
                     url=f"{self.base_url}/api/user/{user_id}",
-                    headers=headers
+                    headers=headers,
+                    ssl=False
                 ) as response:
                     
                     if response.status in (200, 201):
@@ -149,7 +150,8 @@ class MarzbanClient:
                 async with session.post(
                     url=f"{self.base_url}/api/user",
                     headers=headers,
-                    json=data
+                    json=data, 
+                    ssl=False
                 ) as response:
                     if response.status in (200, 201):
                         json_data = await response.json()
@@ -203,7 +205,8 @@ class MarzbanClient:
                 async with session.post(
                     url=f"{self.base_url}/api/user",
                     headers=headers,
-                    json=data
+                    json=data,
+                    ssl=False
                 ) as response:
                     
                     if response.status in (200, 201):
@@ -235,7 +238,8 @@ class MarzbanClient:
             async with aiohttp.ClientSession(timeout=self.timeout) as session:
                 async with session.delete(
                     url=f"{self.base_url}/api/user/{username}",
-                    headers=headers
+                    headers=headers,
+                    ssl=False
                 ) as response:
                     
                     if response.status in (200, 204):
