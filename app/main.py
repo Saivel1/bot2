@@ -188,15 +188,46 @@ async def process_sub(uuid: str) -> Redirect:
     if not links:
         raise NotFoundException(detail="Subscription not found")
     
-    async def check_panel(link: str) -> tuple[bool, str]:
-        """Проверить доступность панели"""
-        try:
-            timeout = aiohttp.ClientTimeout(total=3.0)
-            async with aiohttp.ClientSession(timeout=timeout) as session:
-                response = await session.get(url=link)
-                return (response.status in (200, 201), link)
-        except Exception:
-            return (False, link)
+    async def check_panel(link: str, max_attempts: int = 3, delay: int = 1) -> tuple[bool, str]:
+        """Проверить доступность панели с retry"""
+        timeout = aiohttp.ClientTimeout(total=3.0)
+        connector = aiohttp.TCPConnector(ssl=False)
+        
+        for attempt in range(max_attempts):
+            try:
+                async with aiohttp.ClientSession(
+                    timeout=timeout,
+                    connector=connector
+                ) as session:
+                    response = await session.get(url=link)
+                    
+                    # Успех
+                    if response.status in (200, 201):
+                        return (True, link)
+                    
+                    # Серверные ошибки - retry
+                    elif 500 <= response.status < 600 and attempt < max_attempts - 1:
+                        logger.warning(f"Panel {link} retry {attempt + 1}/{max_attempts}: статус {response.status}")
+                        await asyncio.sleep(delay * (attempt + 1))
+                        continue
+                    
+                    # Клиентские ошибки - сразу False
+                    else:
+                        return (False, link)
+            
+            except (aiohttp.ClientError, asyncio.TimeoutError) as e:
+                if attempt < max_attempts - 1:
+                    logger.warning(f"Panel {link} retry {attempt + 1}/{max_attempts}: {e}")
+                    await asyncio.sleep(delay * (attempt + 1))
+                else:
+                    logger.debug(f"Panel {link} недоступна после {max_attempts} попыток")
+                    return (False, link)
+            
+            except Exception as e:
+                logger.error(f"Неожиданная ошибка при проверке {link}: {e}")
+                return (False, link)
+        
+        return (False, link)
     
     # Проверяем все панели параллельно
     results = await asyncio.gather(*[check_panel(link) for link in links])
