@@ -85,7 +85,7 @@ class MarzbanClient:
             logger.error(f"Исключение при получении пользователя {user_id}: {e}")
             return None
     
-    @retry_on_failure(max_attempts=3, delay=2)
+    #@retry_on_failure(max_attempts=3, delay=2)
     async def modify_user(self, user_id: str, expire: int):
         """Изменить данные пользователя"""
         try:
