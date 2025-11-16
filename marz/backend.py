@@ -103,7 +103,8 @@ class MarzbanClient:
                 async with session.put(
                     url=f"{self.base_url}/api/user/{user_id}",
                     headers=headers,
-                    json=data
+                    json=data,
+                    ssl=False
                 ) as response:
                     
                     if response.status in (200, 201):
