@@ -106,12 +106,11 @@ class MarzbanClient:
             
             data = {"expire": expire}
             
-            async with aiohttp.ClientSession(timeout=self.timeout, connector=connector) as session:
+            async with aiohttp.ClientSession(timeout=self.timeout) as session:
                 async with session.put(
                     url=f"{self.base_url}/api/user/{user_id}",
                     headers=headers,
-                    json=data,
-                    ssl=False
+                    json=data
                 ) as response:
                     
                     if response.status in (200, 201):
