@@ -7,7 +7,7 @@ from db.database import async_session
 from db.db_models import PaymentData, LinksOrm
 from repositories.base import BaseRepository
 from misc.utils import get_links_of_panels, get_user, modify_user, new_date, create_user_sync, update_user_sync
-from marz.backend import marzban_client
+from marz.backend import MarzbanClient
 from app.redis_client import init_redis
 from redis.asyncio import Redis
 import app.redis_client as redis_module 
@@ -227,12 +227,13 @@ async def yoo_kassa(request: Request) -> dict:
         logger.info(f"Order: {order_id} was canceled or TimeOut")
         return {"response": "Order was canceled"}
     
+    backend = MarzbanClient(settings.M_DIGITAL_URL)
+    
     obj_data = data.get("object", {})
     pay_id, pay_am = obj_data.get('id'), obj_data.get('amount')
     logger.info(f'{pay_id} | {pay_am}')
     
-    user_marz = await marzban_client.get_user(user_id=obj.user_id)
-    user = await get_user(user_id=obj.user_id)
+    user_marz = await backend.get_user(user_id=obj.user_id)
     expire = calculate_expire(old_expire=user_marz['expire']) #type: ignore
     new_expire = new_date(expire=expire, amount=pay_am['value'])
     

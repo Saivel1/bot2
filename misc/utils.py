@@ -2,9 +2,8 @@ from urllib.parse import unquote
 from dataclasses import dataclass
 from repositories.base import BaseRepository
 from db.database import async_session
-from db.db_models import UserOrm, LinksOrm, PanelQueue
+from db.db_models import UserOrm, LinksOrm
 from datetime import datetime
-from marz.backend import marzban_client
 from misc.bot_setup import add_monthes
 from datetime import timedelta
 from logger_setup import logger
@@ -12,7 +11,6 @@ import uuid
 from marz.backend import MarzbanClient
 from config_data.config import settings
 import json
-from typing import Optional
 import app.redis_client as redis_module
 
 MONTH = 30
@@ -48,9 +46,11 @@ async def to_link(lst_data: dict):
 
 async def get_user_cached(user_id: str, ttl: int = 300) -> dict | None:
     """Получить пользователя с кэшированием на 5 минут"""
+    backend = MarzbanClient(settings.M_DIGITAL_URL)
+
     if redis_module.redis_client is None:
         logger.error("❌ redis_client is None!")
-        return await marzban_client.get_user(user_id)
+        return await backend.get_user(user_id)
     
     cache_key = f"marzban:user:{user_id}"
     
@@ -61,7 +61,7 @@ async def get_user_cached(user_id: str, ttl: int = 300) -> dict | None:
         return json.loads(cached)
     
     logger.debug(f"✗ Cache miss для {user_id}")
-    res = await marzban_client.get_user(user_id)
+    res = await backend.get_user(user_id)
     
     if res:
         await redis_module.redis_client.set(cache_key, json.dumps(res), ex=ttl)
@@ -113,11 +113,12 @@ async def get_links_of_panels(uuid: str) -> list | None:
 
 async def modify_user(username):
     username = str(username)
+    backend = MarzbanClient(url=settings.M_DIGITAL_URL)
 
-    user = await marzban_client.get_user(user_id=username)
+    user = await backend.get_user(user_id=username)
     logger.debug(user)
     if user is None:
-        user = await marzban_client.create_user(username=username)
+        user = await backend.create_user(username=username)
         logger.info(f'Зареган {user}')
     
     link = await get_user_in_links(user_id=username)
@@ -140,7 +141,7 @@ async def modify_user(username):
             res = await repo.create(data_panel)
             logger.debug(res)
 
-        await marzban_client.modify_user(
+        await backend.modify_user(
             user_id=username,
             expire=0
         )

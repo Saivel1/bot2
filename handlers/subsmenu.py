@@ -4,7 +4,6 @@ from keyboards.builder import SubMenu
 from keyboards.deps import BackButton
 from aiogram.types import CallbackQuery
 from logger_setup import logger
-from marz.backend import marzban_client
 from misc.utils import to_link, get_sub_url, get_user_in_links, get_user_cached
 from config_data.config import settings as s
 import app.redis_client as redis_module
