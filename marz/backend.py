@@ -6,6 +6,7 @@ from logger_setup import logger
 from typing import Optional, Dict, Any
 import json
 from functools import wraps
+import ssl
 
 def retry_on_failure(max_attempts=3, delay=1):
     """Декоратор для retry"""
@@ -44,7 +45,11 @@ class MarzbanClient:
             "username": self.user,
             "password": self.password
         }
-        connector = aiohttp.TCPConnector(ssl=False)
+        ssl_context = ssl.create_default_context()
+        ssl_context.check_hostname = False
+        ssl_context.verify_mode = ssl.CERT_NONE
+        
+        connector = aiohttp.TCPConnector(ssl=ssl_context)
         
         async with aiohttp.ClientSession(timeout=self.timeout, connector=connector) as session:
             async with session.post(
