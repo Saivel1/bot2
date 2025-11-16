@@ -190,7 +190,7 @@ async def process_sub(uuid: str) -> Redirect:
     if not links:
         raise NotFoundException(detail="Subscription not found")
     
-    async def check_panel(link: str, max_attempts: int = 3, delay: int = 1) -> tuple[bool, str]:
+    async def check_panel(link: str, max_attempts: int = 15, delay: int = 1) -> tuple[bool, str]:
         """Проверить доступность панели с retry"""
         timeout = aiohttp.ClientTimeout(total=3.0)
         connector = aiohttp.TCPConnector(ssl=False)
@@ -210,6 +210,8 @@ async def process_sub(uuid: str) -> Redirect:
                     # Серверные ошибки - retry
                     elif 500 <= response.status < 600 and attempt < max_attempts - 1:
                         logger.warning(f"Panel {link} retry {attempt + 1}/{max_attempts}: статус {response.status}")
+                        if attempt % 5 == 0:
+                            await asyncio.sleep(delay * 20 * (attempt + 1))
                         await asyncio.sleep(delay * (attempt + 1))
                         continue
                     
@@ -220,6 +222,8 @@ async def process_sub(uuid: str) -> Redirect:
             except (aiohttp.ClientError, asyncio.TimeoutError) as e:
                 if attempt < max_attempts - 1:
                     logger.warning(f"Panel {link} retry {attempt + 1}/{max_attempts}: {e}")
+                    if attempt % 5 == 0:
+                        await asyncio.sleep(delay * 20 * (attempt + 1))
                     await asyncio.sleep(delay * (attempt + 1))
                 else:
                     logger.debug(f"Panel {link} недоступна после {max_attempts} попыток")
