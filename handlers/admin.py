@@ -25,10 +25,11 @@ async def cmd_admin(message: types.Message):
 
 @dp.callback_query(F.data == 'admin_menu')
 async def cb_admin(callback: CallbackQuery):
-    user_id = message.from_user.id #type: ignore
+    user_id = callback.from_user.id #type: ignore
     logger.debug(f"ID : {user_id} | Ввёл команду /id")
     if user_id != 482410857:
         logger.info(f'User {user_id} попытался запросить админ команду')
+        await callback.answer()
         return
     
     await callback.message.edit_text( #type: ignore
