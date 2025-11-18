@@ -65,3 +65,21 @@ async def health_check(callback: CallbackQuery):
         text=ANS_TEXT,
         reply_markup=Admin.back()
     )
+
+@dp.callback_query(F.data == 'users_cnt')
+async def users_cnt(callback: CallbackQuery):
+    client = MarzbanClient(url=s.M_DIGITAL_URL)
+    users = await client.get_users()
+    if users is None:
+        users = dict()
+        users['total'] = 'Ошибка'
+
+    ANS_TEXT = f"""
+Количество пользователей: {users['total']}
+"""
+    
+
+    await callback.message.edit_text( #type: ignore
+        text=ANS_TEXT,
+        reply_markup=Admin.back()
+    )
