@@ -339,3 +339,10 @@ class MarzbanClient:
             except Exception as e:
                 logger.warning(f'Панель {self.base_url} недоступна: {e}')
                 return False
+    
+    async def health_check_custom(self) -> bool:
+        """Проверка доступности панели (TCP уровень)"""
+        res = await self._make_request(method="GET", endpoint='/api/core')
+        if res:
+            return True
+        return False

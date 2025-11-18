@@ -43,8 +43,8 @@ async def health_check(callback: CallbackQuery):
     pan1 = MarzbanClient(url=s.DNS1_URL)
     pan2 = MarzbanClient(url=s.DNS2_URL)
 
-    res_1 = await pan1.health_check()
-    res_2 = await pan2.health_check()
+    res_1 = await pan1.health_check_custom()
+    res_2 = await pan2.health_check_custom()
 
     ANS_TEXT = f"""
 Проверка досутпности:
