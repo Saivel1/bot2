@@ -342,7 +342,12 @@ class MarzbanClient:
     
     async def health_check_custom(self) -> bool:
         """Проверка доступности панели (TCP уровень)"""
-        res = await self._make_request(method="GET", endpoint='/api/core')
+        token = await self._get_token()
+        headers = {
+                "accept": "application/json",
+                "Authorization": f"Bearer {token}"
+        }
+        res = await self._make_request(method="GET", endpoint='/api/core', headers=headers)
         if res:
             return True
         return False
