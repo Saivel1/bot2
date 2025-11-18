@@ -2,7 +2,6 @@ from aiogram import F
 from bot_instance import dp
 from aiogram.types import CallbackQuery
 from logger_setup import logger
-from aiogram.types import WebAppInfo, InlineKeyboardMarkup, InlineKeyboardButton
 from misc.utils import get_user_in_links
 from keyboards.markup import Instruction
 

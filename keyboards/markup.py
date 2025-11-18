@@ -23,3 +23,20 @@ class Instruction:
         )],
         [InlineKeyboardButton(text="⬅️ Назад", callback_data="start_menu")]
     ])
+
+
+class Admin:
+
+    @staticmethod
+    def main_keyboard():
+        return InlineKeyboardMarkup(inline_keyboard=[
+            [InlineKeyboardButton(text="Health check", callback_data="health")],
+            [InlineKeyboardButton(text="Users count", callback_data="users_cnt")]
+        ])
+    
+
+    @staticmethod
+    def back():
+        return InlineKeyboardMarkup(inline_keyboard=[
+            [InlineKeyboardButton(text="Назад", callback_data="admin_menu")]
+        ])

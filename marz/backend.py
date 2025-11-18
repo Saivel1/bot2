@@ -112,7 +112,6 @@ class MarzbanClient:
     
 
     
-    # @retry_on_failure(max_attempts=3, delay=2)
     async def get_user(self, user_id: str) -> Optional[Dict[str, Any]]:
         token = await self._get_token()
         headers = {
@@ -315,3 +314,28 @@ class MarzbanClient:
         except Exception as e:
             logger.error(f"Исключение при удалении пользователя {username}: {e}")
             return None
+    
+    async def get_users(self) -> Optional[Dict[str, Any]]:
+        token = await self._get_token()
+        headers = {
+                "accept": "application/json",
+                "Authorization": f"Bearer {token}"
+        }
+        return await self._make_request(method="GET", endpoint=f"/api/users", headers=headers)
+
+
+    async def health_check(self) -> bool:
+            """Проверка доступности панели (TCP уровень)"""
+            try:
+                timeout = aiohttp.ClientTimeout(total=5)
+                
+                async with aiohttp.ClientSession(timeout=timeout) as session:
+                    # HEAD запрос = минимальный трафик
+                    async with session.head(url=self.base_url) as response:
+                        # Любой HTTP ответ = сервер жив
+                        logger.debug(f'Панель {self.base_url} доступна (статус {response.status})')
+                        return True
+            
+            except Exception as e:
+                logger.warning(f'Панель {self.base_url} недоступна: {e}')
+                return False

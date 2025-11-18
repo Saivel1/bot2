@@ -32,6 +32,7 @@ from contextlib import asynccontextmanager
 import handlers.start
 import handlers.instructions
 import handlers.subsmenu
+import handlers.admin
 
 
 BASE_DIR = Path(__file__).parent
