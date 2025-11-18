@@ -348,6 +348,7 @@ class MarzbanClient:
                 "Authorization": f"Bearer {token}"
         }
         res = await self._make_request(method="GET", endpoint='/api/core', headers=headers)
+        logger.debug(res)
         if res:
             return True
         return False
